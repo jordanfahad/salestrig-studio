@@ -1,0 +1,33 @@
+Salestrig Studio
+================
+
+Salestrig Studio is a social media scheduling and content platform built on,
+and derived from, the Postiz open-source project.
+
+Upstream project:  Postiz (postiz-app)
+Upstream author:   Gitroom (https://github.com/gitroomhq/postiz-app)
+Forked from:       Postiz v1.47.0
+License:           GNU Affero General Public License v3.0 (AGPL-3.0)
+
+This product is NOT affiliated with, endorsed by, or sponsored by Gitroom or
+the Postiz project. "Postiz" and the Postiz name and logo are property of their
+respective owners and are used here only as factual attribution of provenance.
+Salestrig and Salestrig Studio are separate brands.
+
+------------------------------------------------------------------------------
+License and source-code availability (AGPL-3.0 section 13)
+------------------------------------------------------------------------------
+
+This software is licensed under the AGPL-3.0. The full license text is in the
+LICENSE file at the root of this repository. All original copyright notices
+have been preserved.
+
+Because this software may be operated as a network service ("hosted SaaS"),
+AGPL-3.0 section 13 requires that the complete, corresponding modified source
+code be made available to all users who interact with it over a network.
+
+The corresponding source for the running Salestrig Studio service is available
+at: <SET THIS URL — the public Salestrig Studio source repository>
+
+Salestrig Studio modifications are Copyright (c) 2026 Salestrig and are
+likewise distributed under the AGPL-3.0.

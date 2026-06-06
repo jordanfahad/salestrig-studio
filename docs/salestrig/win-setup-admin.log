@@ -1,0 +1,48 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260604141850
+Username: FAHAD\Fahad
+RunAs User: FAHAD\Fahad
+Configuration Name: 
+Machine: FAHAD (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Users\jorda\Documents\Codex\2026-06-03\salestrig-social\docs\salestrig\win-setup-admin.ps1
+Process ID: 21776
+PSVersion: 5.1.26100.8521
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8521
+BuildVersion: 10.0.26100.8521
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== [1/2] Installing WSL2 core (no distro) ===
+Downloading: Windows Subsystem for Linux 2.7.3
+Installing: Windows Subsystem for Linux 2.7.3
+Windows Subsystem for Linux 2.7.3 has been installed.
+Installing Windows optional component: VirtualMachinePlatform
+
+Deployment Image Servicing and Management tool
+Version: 10.0.26100.8521
+
+Image Version: 10.0.26200.8524
+
+Enabling feature(s)
+[==========================100.0%==========================]
+The operation completed successfully.
+The requested operation is successful. Changes will not be effective until the system is rebooted.
+The requested operation is successful. Changes will not be effective until the system is rebooted.
+=== [2/2] Installing Docker Desktop ===
+Found Docker Desktop [Docker.DockerDesktop] Version 4.76.0
+This application is licensed to you by its owner.
+Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+Downloading https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
+  ██████████████████████████████   639 MB /  639 MB
+Successfully verified installer hash
+Starting package install...
+Successfully installed
+=== DONE. A REBOOT is required before Docker can start. ===
+**********************
+Windows PowerShell transcript end
+End time: 20260604142634
+**********************
