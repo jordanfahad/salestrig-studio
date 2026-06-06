@@ -30,6 +30,7 @@ import { BrandVoiceController } from '@gitroom/backend/api/routes/brand-voice.co
 import { ContentPillarController } from '@gitroom/backend/api/routes/content-pillar.controller';
 import { RepurposeController } from '@gitroom/backend/api/routes/repurpose.controller';
 import { LaunchPlannerController } from '@gitroom/backend/api/routes/launch-planner.controller';
+import { ApprovalController } from '@gitroom/backend/api/routes/approval.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
@@ -64,6 +65,7 @@ const authenticatedController = [
   ContentPillarController,
   RepurposeController,
   LaunchPlannerController,
+  ApprovalController,
   AutopostController,
   SetsController,
   ThirdPartyController,

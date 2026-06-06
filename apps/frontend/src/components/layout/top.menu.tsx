@@ -178,6 +178,27 @@ export const useMenuItem = () => {
       path: '/launch-planner',
     },
     {
+      name: t('approvals', 'Approvals'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/approvals',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg

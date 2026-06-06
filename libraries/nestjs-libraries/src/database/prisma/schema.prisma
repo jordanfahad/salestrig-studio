@@ -433,6 +433,7 @@ model Comments {
 model Post {
   id                         String                    @id @default(cuid())
   state                      State                     @default(QUEUE)
+  approvalStatus             ApprovalStatus            @default(APPROVED)
   publishDate                DateTime
   organizationId             String
   integrationId              String
@@ -472,6 +473,7 @@ model Post {
   @@index([deletedAt])
   @@index([publishDate])
   @@index([state])
+  @@index([approvalStatus])
   @@index([organizationId])
   @@index([parentPostId])
   @@index([submittedForOrderId])
@@ -945,6 +947,15 @@ enum State {
   PUBLISHED
   ERROR
   DRAFT
+}
+
+// Salestrig Studio — Assistant/VA editorial approval workflow (separate from
+// publishing State). Default APPROVED so normal posts are unaffected.
+enum ApprovalStatus {
+  IDEA
+  DRAFT
+  NEEDS_REVIEW
+  APPROVED
 }
 
 enum SubscriptionTier {
