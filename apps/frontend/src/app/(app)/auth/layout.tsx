@@ -3,7 +3,6 @@ import { getT } from '@gitroom/react/translation/get.translation.service.backend
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
-import { TestimonialComponent } from '@gitroom/frontend/components/auth/testimonial.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 export default async function AuthLayout({
@@ -23,14 +22,16 @@ export default async function AuthLayout({
           <div className="flex">{children}</div>
         </div>
       </div>
-      <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
-        <div className="text-center">
-          Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
-          Entrepreneurs use
-          <br />
-          Postiz To Grow Their Social Presence
+      <div className="flex-1 pt-[88px] hidden lg:flex flex-col items-center justify-start">
+        <div className="text-center text-[36px] leading-tight max-w-[540px]">
+          Plan, create, and schedule your content from one{' '}
+          <span className="text-[#FC69FF]">elegant, AI-powered</span> workspace
         </div>
-        <TestimonialComponent />
+        <div className="mt-[28px] max-w-[460px] text-center text-[16px] leading-relaxed text-white/70">
+          Salestrig Studio helps founders and creators show up consistently —
+          brand voice, content pillars, launches, and analytics, all in one calm
+          place.
+        </div>
       </div>
     </div>
   );
