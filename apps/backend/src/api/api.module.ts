@@ -27,6 +27,7 @@ import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.
 import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
 import { BrandVoiceController } from '@gitroom/backend/api/routes/brand-voice.controller';
+import { ContentPillarController } from '@gitroom/backend/api/routes/content-pillar.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
@@ -58,6 +59,7 @@ const authenticatedController = [
   WebhookController,
   SignatureController,
   BrandVoiceController,
+  ContentPillarController,
   AutopostController,
   SetsController,
   ThirdPartyController,

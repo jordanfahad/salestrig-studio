@@ -46,6 +46,8 @@ import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
 import { BrandVoiceRepository } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand-voice.repository';
 import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand-voice.service';
+import { ContentPillarRepository } from '@gitroom/nestjs-libraries/database/prisma/content-pillar/content-pillar.repository';
+import { ContentPillarService } from '@gitroom/nestjs-libraries/database/prisma/content-pillar/content-pillar.service';
 
 @Global()
 @Module({
@@ -101,6 +103,8 @@ import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/bra
     AdminStatsService,
     BrandVoiceRepository,
     BrandVoiceService,
+    ContentPillarRepository,
+    ContentPillarService,
   ],
   get exports() {
     return this.providers;
