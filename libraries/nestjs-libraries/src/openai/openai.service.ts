@@ -16,8 +16,41 @@ const VoicePrompt = z.object({
   voice: z.string(),
 });
 
+// Salestrig Studio — Repurposing Studio output shape.
+const RepurposeSchema = z.object({
+  linkedin: z.string(),
+  xThread: z.array(z.string()),
+  instagram: z.string(),
+  reelScript: z.string(),
+  tiktokHooks: z.array(z.string()),
+  emailTeaser: z.string(),
+  storyPrompts: z.array(z.string()),
+});
+
 @Injectable()
 export class OpenaiService {
+  // Salestrig Studio — Repurposing Studio: long-form -> platform-perfect outputs.
+  async repurposeContent(content: string, brandVoice = '') {
+    return (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a social media strategist who repurposes long-form content into platform-perfect posts. Preserve the author's meaning and value. Respect each platform's norms, tone, and length.${
+              brandVoice ? `\n\n${brandVoice}` : ''
+            }`,
+          },
+          {
+            role: 'user',
+            content: `Repurpose the content below into: a LinkedIn post; an X/Twitter thread (array of tweets, each <= 270 chars); an Instagram caption; a 30-60 second Reel/short video script; 5 punchy TikTok hook ideas; a short email teaser; and 3 Instagram story prompts.\n\n<!-- CONTENT -->\n${content}`,
+          },
+        ],
+        response_format: zodResponseFormat(RepurposeSchema, 'repurpose'),
+      })
+    ).choices[0].message.parsed;
+  }
+
   async generateImage(prompt: string, isVertical = false) {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.

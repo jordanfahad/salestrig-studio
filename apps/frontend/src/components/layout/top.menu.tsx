@@ -136,6 +136,27 @@ export const useMenuItem = () => {
       path: '/content-pillars',
     },
     {
+      name: t('repurpose', 'Repurpose'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M17 2l4 4-4 4M7 22l-4-4 4-4M21 6H8a5 5 0 0 0-5 5M3 18h13a5 5 0 0 0 5-5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/repurpose',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg

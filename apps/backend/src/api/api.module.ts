@@ -28,6 +28,7 @@ import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controll
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
 import { BrandVoiceController } from '@gitroom/backend/api/routes/brand-voice.controller';
 import { ContentPillarController } from '@gitroom/backend/api/routes/content-pillar.controller';
+import { RepurposeController } from '@gitroom/backend/api/routes/repurpose.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
@@ -60,6 +61,7 @@ const authenticatedController = [
   SignatureController,
   BrandVoiceController,
   ContentPillarController,
+  RepurposeController,
   AutopostController,
   SetsController,
   ThirdPartyController,
