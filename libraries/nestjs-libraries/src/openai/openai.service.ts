@@ -27,6 +27,18 @@ const RepurposeSchema = z.object({
   storyPrompts: z.array(z.string()),
 });
 
+// Salestrig Studio — Launch Campaign Planner output shape.
+const LaunchPlanSchema = z.object({
+  posts: z.array(
+    z.object({
+      day: z.number(),
+      phase: z.string(), // teaser | value | objection | social-proof | urgency | final-call
+      title: z.string(),
+      content: z.string(),
+    })
+  ),
+});
+
 @Injectable()
 export class OpenaiService {
   // Salestrig Studio — Repurposing Studio: long-form -> platform-perfect outputs.
@@ -47,6 +59,35 @@ export class OpenaiService {
           },
         ],
         response_format: zodResponseFormat(RepurposeSchema, 'repurpose'),
+      })
+    ).choices[0].message.parsed;
+  }
+
+  // Salestrig Studio — Launch Campaign Planner: phased N-day launch sequence.
+  async planLaunch(
+    offer: string,
+    audience: string | undefined,
+    durationDays: number,
+    brandVoice = ''
+  ) {
+    return (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a launch strategist who plans social media launch campaigns for creators and founders. Build a cohesive ${durationDays}-day sequence that moves followers from awareness to purchase, using these phases in order over the timeline: teaser, value, objection-handling, social-proof, urgency, and final-call. Space the posts sensibly across days 1 to ${durationDays}.${
+              brandVoice ? `\n\n${brandVoice}` : ''
+            }`,
+          },
+          {
+            role: 'user',
+            content: `Plan a ${durationDays}-day launch sequence for this offer: ${offer}.${
+              audience ? ` Audience: ${audience}.` : ''
+            } For each post return: day (1-${durationDays}), phase, a scroll-stopping title/hook, and the full post content.`,
+          },
+        ],
+        response_format: zodResponseFormat(LaunchPlanSchema, 'launchPlan'),
       })
     ).choices[0].message.parsed;
   }

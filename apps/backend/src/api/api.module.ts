@@ -29,6 +29,7 @@ import { SignatureController } from '@gitroom/backend/api/routes/signature.contr
 import { BrandVoiceController } from '@gitroom/backend/api/routes/brand-voice.controller';
 import { ContentPillarController } from '@gitroom/backend/api/routes/content-pillar.controller';
 import { RepurposeController } from '@gitroom/backend/api/routes/repurpose.controller';
+import { LaunchPlannerController } from '@gitroom/backend/api/routes/launch-planner.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
@@ -62,6 +63,7 @@ const authenticatedController = [
   BrandVoiceController,
   ContentPillarController,
   RepurposeController,
+  LaunchPlannerController,
   AutopostController,
   SetsController,
   ThirdPartyController,
