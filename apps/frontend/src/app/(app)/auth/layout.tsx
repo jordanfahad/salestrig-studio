@@ -13,10 +13,10 @@ export default async function AuthLayout({
   const t = await getT();
 
   return (
-    <div className="bg-[#0E0E0E] flex flex-1 p-[12px] gap-[12px] min-h-screen w-screen text-white">
+    <div className="bg-[#17121E] flex flex-1 p-[12px] gap-[12px] min-h-screen w-screen text-white">
       {/*<style>{`html, body {overflow-x: hidden;}`}</style>*/}
       <ReturnUrlComponent />
-      <div className="flex flex-col py-[40px] px-[20px] flex-1 lg:w-[600px] lg:flex-none rounded-[12px] text-white p-[12px] bg-[#1A1919]">
+      <div className="flex flex-col py-[40px] px-[20px] flex-1 lg:w-[600px] lg:flex-none rounded-[12px] text-white p-[12px] bg-[#221A2B]">
         <div className="w-full max-w-[440px] mx-auto justify-center gap-[20px] h-full flex flex-col text-white">
           <LogoTextComponent />
           <div className="flex">{children}</div>
@@ -25,7 +25,7 @@ export default async function AuthLayout({
       <div className="flex-1 pt-[88px] hidden lg:flex flex-col items-center justify-start">
         <div className="text-center text-[36px] leading-tight max-w-[540px]">
           Plan, create, and schedule your content from one{' '}
-          <span className="text-[#FC69FF]">elegant, AI-powered</span> workspace
+          <span className="text-[#E2A87C]">elegant, AI-powered</span> workspace
         </div>
         <div className="mt-[28px] max-w-[460px] text-center text-[16px] leading-relaxed text-white/70">
           Salestrig Studio helps founders and creators show up consistently —
