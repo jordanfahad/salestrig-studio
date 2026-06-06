@@ -67,3 +67,5 @@ dev-*.log
 *-install.log
 docker-up.log
 uploads/
+*-restart.log
+*.err.log
