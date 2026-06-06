@@ -11,7 +11,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { pricing, planDisplayName } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -459,7 +459,7 @@ export const MainBillingComponent: FC<{
               key={name}
               className="flex-1 bg-sixth border border-customColor6 rounded-[4px] p-[24px] gap-[16px] flex flex-col [@media(max-width:1024px)]:items-center"
             >
-              <div className="text-[18px]">{name}</div>
+              <div className="text-[18px]">{planDisplayName(name)}</div>
               <div className="text-[38px] flex gap-[2px] items-center">
                 <div>
                   $

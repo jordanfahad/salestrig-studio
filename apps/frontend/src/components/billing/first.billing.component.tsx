@@ -11,7 +11,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { pricing, planDisplayName } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { capitalize } from 'lodash';
 import clsx from 'clsx';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -267,7 +267,7 @@ export const FirstBillingComponent = () => {
                     )}
                   >
                     <div className="text-[20px] mobile:text-[18px] font-[500]">
-                      {capitalize(key)}
+                      {planDisplayName(key)}
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
                       <span className="text-[44px] mobile:text-[30px] font-[600]">
