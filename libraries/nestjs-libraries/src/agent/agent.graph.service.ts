@@ -9,6 +9,7 @@ import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
 import { TavilySearch } from '@langchain/tavily';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand-voice.service';
 import dayjs from 'dayjs';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { z } from 'zod';
@@ -106,7 +107,8 @@ export class AgentGraphService {
   private storage = UploadFactory.createStorage();
   constructor(
     private _postsService: PostsService,
-    private _mediaService: MediaService
+    private _mediaService: MediaService,
+    private _brandVoiceService: BrandVoiceService
   ) {}
   static state = () =>
     new StateGraph<WorkflowChannelsState>({
@@ -256,9 +258,13 @@ export class AgentGraphService {
     const structuredOutput = model.withStructuredOutput(
       contentZod(!!state.isPicture, state.format)
     );
+    const brandVoice = await this._brandVoiceService.getSystemPrompt(
+      state.orgId
+    );
     const { content: outputContent } = await ChatPromptTemplate.fromTemplate(
       `
         You are an assistant that gets existing hook of a social media, content and generate only the content.
+        {brandVoice}
         - Don't add any hashtags
         - Make sure it sounds ${state.tone}
         - Use ${state.tone === 'personal' ? '1st' : '3rd'} person mode
@@ -296,6 +302,7 @@ export class AgentGraphService {
         hook: state.hook,
         request: state.messages[0].content,
         information: state.fresearch,
+        brandVoice,
       });
 
     return {

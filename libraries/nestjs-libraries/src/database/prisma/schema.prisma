@@ -36,6 +36,7 @@ model Organization {
   sets                Sets[]
   signatures          Signatures[]
   subscription        Subscription?
+  brandVoice          BrandVoice?
   tags                Tags[]
   thirdParty          ThirdParty[]
   usedCodes           UsedCodes[]
@@ -368,6 +369,26 @@ model Signatures {
   @@index([createdAt])
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+// Salestrig Studio — Brand Voice Kit (one per organization).
+// Feeds every AI generation so drafts sound on-brand. See Phase 4 plan.
+model BrandVoice {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  tone           String? // e.g. "warm, confident, encouraging"
+  audience       String? // who they create for
+  offers         String? // offer/product descriptions
+  emojiPolicy    String       @default("minimal") // none | minimal | expressive
+  bannedPhrases  String[]     @default([])
+  preferredCtas  String[]     @default([])
+  pillars        String[]     @default([]) // content pillars (Education, Story, Offer, ...)
+  extraNotes     String? // anything else the AI should honor
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model Comments {

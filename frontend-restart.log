@@ -1,0 +1,8 @@
+
+> postiz-frontend@1.0.0 dev C:\Users\jorda\Documents\Codex\2026-06-03\salestrig-social\apps\frontend
+> dotenv -e ../../.env -- next dev -p 4200
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:4200
+- Network:       http://172.24.96.1:4200
+✓ Ready in 20.4s
