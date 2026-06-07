@@ -27,6 +27,17 @@ const RepurposeSchema = z.object({
   storyPrompts: z.array(z.string()),
 });
 
+// Salestrig Studio — Content Confidence Score output shape.
+const ContentScoreSchema = z.object({
+  overall: z.number(),
+  clarity: z.number(),
+  hook: z.number(),
+  cta: z.number(),
+  platformFit: z.number(),
+  brandVoice: z.number(),
+  suggestions: z.array(z.string()),
+});
+
 // Salestrig Studio — Launch Campaign Planner output shape.
 const LaunchPlanSchema = z.object({
   posts: z.array(
@@ -59,6 +70,27 @@ export class OpenaiService {
           },
         ],
         response_format: zodResponseFormat(RepurposeSchema, 'repurpose'),
+      })
+    ).choices[0].message.parsed;
+  }
+
+  // Salestrig Studio — Content Confidence Score: rate a draft + suggest fixes.
+  async scoreContent(content: string, platform?: string, brandVoice = '') {
+    return (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a sharp but encouraging social media editor. Score a draft post from 0-100 on each of: overall, clarity, hook (the opening), cta (call to action), platformFit${
+              platform ? ` for ${platform}` : ''
+            }, and brandVoice (consistency with the brand profile). Then give 2-4 specific, actionable suggestions to improve it. Be honest but kind.${
+              brandVoice ? `\n\n${brandVoice}` : ''
+            }`,
+          },
+          { role: 'user', content: `Score this draft:\n\n${content}` },
+        ],
+        response_format: zodResponseFormat(ContentScoreSchema, 'contentScore'),
       })
     ).choices[0].message.parsed;
   }

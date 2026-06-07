@@ -199,6 +199,27 @@ export const useMenuItem = () => {
       path: '/approvals',
     },
     {
+      name: t('confidence_score', 'Score'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M12 2a10 10 0 1 0 10 10M22 12a10 10 0 0 0-10-10v10z M12 8v4l3 2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/confidence-score',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg
