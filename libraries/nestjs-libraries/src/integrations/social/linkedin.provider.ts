@@ -31,15 +31,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Modern LinkedIn scopes only. `r_basicprofile` is a legacy scope that
+  // newly-created LinkedIn apps can no longer obtain (replaced by the OpenID
+  // Connect `openid`/`profile` scopes), and the `*_organization_*` scopes
+  // require Community Management API approval — both caused the LinkedIn
+  // "Bummer, something went wrong" authorization rejection. Personal posting
+  // only needs `w_member_social` + OpenID profile. Company Page posting lives
+  // in the separate linkedin-page provider (gated on Community Mgmt approval).
+  scopes = ['openid', 'profile', 'w_member_social'];
   override maxConcurrentJob = 2; // LinkedIn has professional posting limits
   refreshWait = true;
   editor = 'normal' as const;
@@ -115,13 +114,20 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
+    // `/v2/me` (vanityName) needs the legacy r_basicprofile scope; optional now.
+    let vanityName: string | undefined;
+    try {
+      const meRes = await fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-    ).json();
+      });
+      if (meRes.ok) {
+        ({ vanityName } = await meRes.json());
+      }
+    } catch {
+      // ignore — vanityName stays undefined
+    }
 
     const {
       name,
@@ -142,7 +148,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       expiresIn: expires_in,
       name,
       picture: picture || '',
-      username: vanityName,
+      username:
+        vanityName || name?.replace(/\s+/g, '').toLowerCase() || id,
     };
   }
 
@@ -207,13 +214,23 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
+    // `/v2/me` (vanityName) requires the legacy r_basicprofile scope which
+    // modern apps don't have, so this call may 403. Treat it as optional and
+    // fall back to a name-derived handle (or the user id) so the connect still
+    // succeeds with the OpenID-only scope set.
+    let vanityName: string | undefined;
+    try {
+      const meRes = await fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-    ).json();
+      });
+      if (meRes.ok) {
+        ({ vanityName } = await meRes.json());
+      }
+    } catch {
+      // ignore — vanityName stays undefined
+    }
 
     return {
       id,
@@ -222,7 +239,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       expiresIn,
       name,
       picture,
-      username: vanityName,
+      username:
+        vanityName || name?.replace(/\s+/g, '').toLowerCase() || id,
     };
   }
 
