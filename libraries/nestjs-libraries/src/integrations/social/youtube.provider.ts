@@ -63,7 +63,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     'https://www.googleapis.com/auth/youtube.force-ssl',
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/youtube.upload',
-    'https://www.googleapis.com/auth/youtubepartner',
+    // Removed 'youtubepartner' — a YouTube content-owner/partner scope this
+    // provider never uses (no onBehalfOfContentOwner calls). It's heavily
+    // scrutinized in Google OAuth verification, so requesting an unused partner
+    // scope only risks rejection. Our calls (channels.list, videos.insert,
+    // thumbnails.set, analytics) are covered by the scopes above.
     'https://www.googleapis.com/auth/yt-analytics.readonly',
   ];
 
