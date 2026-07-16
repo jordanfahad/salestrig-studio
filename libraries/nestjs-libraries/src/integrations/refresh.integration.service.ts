@@ -78,21 +78,27 @@ export class RefreshIntegrationService {
       .catch((err) => false);
 
     if (!refresh || !refresh.accessToken) {
-      await this._integrationService.refreshNeeded(
-        integration.organizationId,
-        integration.id
-      );
+      // Flag + notify + disconnect only on the FIRST failure. Providers with no
+      // real refresh grant (Facebook / Instagram return an empty stub) hit this
+      // path on every analytics load once the token expires - without the guard
+      // the owner gets a "could not refresh" notification storm.
+      if (!integration.refreshNeeded) {
+        await this._integrationService.refreshNeeded(
+          integration.organizationId,
+          integration.id
+        );
 
-      await this._integrationService.informAboutRefreshError(
-        integration.organizationId,
-        integration,
-        cause
-      );
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration,
+          cause
+        );
 
-      await this._integrationService.disconnectChannel(
-        integration.organizationId,
-        integration
-      );
+        await this._integrationService.disconnectChannel(
+          integration.organizationId,
+          integration
+        );
+      }
 
       return false;
     }

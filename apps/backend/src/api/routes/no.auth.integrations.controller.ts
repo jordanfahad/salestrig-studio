@@ -135,7 +135,15 @@ export class NoAuthIntegrationsController {
               refresh,
               auth.accessToken
             );
-            return res({ ...newAuth, refreshToken: body.refresh });
+            // Carry the fresh token lifetime from authenticate(): reConnect()
+            // omits expiresIn, and without it the repository keeps the OLD
+            // (already past) tokenExpiration - so the channel is flagged
+            // "needs refresh" again on the very next analytics load.
+            return res({
+              ...newAuth,
+              refreshToken: body.refresh,
+              expiresIn: auth.expiresIn,
+            });
           } catch (err: any) {
             return res({
               error: err.message,

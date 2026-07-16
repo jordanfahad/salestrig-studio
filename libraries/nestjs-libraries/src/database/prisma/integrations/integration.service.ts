@@ -226,7 +226,10 @@ export class IntegrationService {
           integration.organizationId,
           integration.id
         );
-        return;
+        // continue, not return: one failing integration (e.g. Facebook, whose
+        // refresh always fails by design) must not abort the whole sweep and
+        // starve every other channel of its token refresh.
+        continue;
       }
 
       const { refreshToken, accessToken, expiresIn } = data;

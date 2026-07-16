@@ -894,13 +894,16 @@ export class InstagramProvider
       })) || [])
     );
 
+    // data2 is undefined when the insights call errors (deprecated metric,
+    // permission, retired API version) - unguarded .map() threw a TypeError
+    // that bubbled out of analytics() and broke the whole analytics view.
     analytics.push(
-      ...data2.map((d: any) => ({
+      ...(data2 || []).map((d: any) => ({
         label: this.setTitle(d.name),
         percentageChange: 5,
         data: [
           {
-            total: d.total_value.value,
+            total: d.total_value?.value ?? 0,
             date: dayjs().format('YYYY-MM-DD'),
           },
         ],

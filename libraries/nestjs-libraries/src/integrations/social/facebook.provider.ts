@@ -200,7 +200,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         value: 'Facebook return: No permission to publish the video',
       };
     }
-    if (body.indexOf('490') > -1) {
+    // Match the actual error code field, not the bare substring '490': ids,
+    // fbtrace_ids and timestamps routinely contain "490" and were being
+    // misclassified as expired tokens, disconnecting healthy channels.
+    if (body.indexOf('"code":490') > -1 || body.indexOf('"code": 490') > -1) {
       return {
         type: 'refresh-token' as const,
         value: 'Access token expired, please re-authenticate',
@@ -694,24 +697,27 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
+    // Metrics current as of Graph API v23+: Meta deprecated the impressions
+    // family and page_post_engagements on 2025-11-15 (replaced by the "views"
+    // metrics). One dead metric fails the WHOLE insights call, so this list
+    // must only contain live metrics. this.fetch (not raw fetch) so real
+    // token errors surface as RefreshToken instead of silently returning [].
     const { data } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      await this.fetch(
+        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_media_view,page_daily_follows_unique,page_video_views,page_fan_adds&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
     return (
       data?.map((d: any) => ({
         label:
-          d.name === 'page_impressions_unique'
-            ? 'Page Impressions'
-            : d.name === 'page_post_engagements'
-            ? 'Posts Engagement'
-            : d.name === 'page_daily_follows'
+          d.name === 'page_media_view'
+            ? 'Page views'
+            : d.name === 'page_daily_follows_unique'
             ? 'Page followers'
             : d.name === 'page_video_views'
             ? 'Videos views'
-            : 'Posts Impressions',
+            : 'New page likes',
         percentageChange: 5,
         data: d?.values?.map((v: any) => ({
           total: v.value,
@@ -731,9 +737,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Fetch post insights from Facebook Graph API
+      // post_impressions_unique and post_reactions_by_type_total were removed
+      // in Meta's 2025-11-15 Page Insights deprecation; post_media_view is the
+      // replacement views metric. Only live metrics may be requested.
       const { data } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_media_view,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
 
@@ -751,8 +760,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         let total = '';
 
         switch (metric.name) {
-          case 'post_impressions_unique':
-            label = 'Impressions';
+          case 'post_media_view':
+            label = 'Views';
             total = String(value);
             break;
           case 'post_clicks':
@@ -767,16 +776,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Clicks by Type';
               total = String(totalClicks);
-            }
-            break;
-          case 'post_reactions_by_type_total':
-            // This returns an object with reaction types
-            if (typeof value === 'object') {
-              const totalReactions = Object.values(
-                value as Record<string, number>
-              ).reduce((sum: number, v: number) => sum + v, 0);
-              label = 'Reactions';
-              total = String(totalReactions);
             }
             break;
         }
