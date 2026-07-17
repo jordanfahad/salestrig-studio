@@ -220,6 +220,16 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       });
       const accountsData = await accountsResponse.json();
 
+      // An error here (quota, disabled API, ungranted business.manage scope)
+      // must not silently read as "you have no business locations" - log it so
+      // the real cause is visible in the backend logs.
+      if (accountsData.error) {
+        console.error(
+          'GMB accounts list failed:',
+          JSON.stringify(accountsData.error).slice(0, 500)
+        );
+      }
+
       if (accountsData.accounts) {
         allAccounts.push(...accountsData.accounts);
       }
