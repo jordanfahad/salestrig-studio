@@ -447,6 +447,36 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
               />
+              {/* Honest publish status for an existing post + direct link to
+                  the live post when it was actually pushed. */}
+              {existingData?.posts?.[0]?.state === 'PUBLISHED' && (
+                <span className="inline-flex items-center gap-[6px] rounded-[6px] bg-green-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-green-500">
+                  {t('status_live', 'Live')}
+                  {!!existingData?.posts?.[0]?.releaseURL && (
+                    <a
+                      href={existingData.posts[0].releaseURL!}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:no-underline"
+                    >
+                      {t('view_live_post', 'View post')}
+                    </a>
+                  )}
+                </span>
+              )}
+              {existingData?.posts?.[0]?.state === 'ERROR' && (
+                <span
+                  className="inline-flex items-center rounded-[6px] bg-red-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-red-500"
+                  title={(existingData?.posts?.[0] as any)?.error || undefined}
+                >
+                  {t('status_not_published', 'Not published')}
+                </span>
+              )}
+              {existingData?.posts?.[0]?.state === 'QUEUE' && (
+                <span className="inline-flex items-center rounded-[6px] bg-blue-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-blue-400">
+                  {t('status_scheduled', 'Scheduled')}
+                </span>
+              )}
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div

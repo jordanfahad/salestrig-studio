@@ -27,6 +27,10 @@ export class InstagramProvider
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
+  // Instagram's publishing API rejects PNGs with a misleading "Media fetch
+  // failed" error; the shared updateMedia pipeline converts PNG uploads to
+  // JPEG before publishing when this flag is set (same as TikTok).
+  convertToJPEG = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
     'instagram_basic',

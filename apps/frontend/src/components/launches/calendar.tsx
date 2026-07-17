@@ -1163,8 +1163,38 @@ const CalendarItem: FC<{
           />
         </div>
         <div className="w-full flex-1 flex flex-col min-h-[40px]">
+          {/* Honest publish status: Live only when actually pushed; a queued
+              post whose time has passed shows "Not published" instead of
+              looking identical to a published one. */}
           <div className="text-start">
-            {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
+            <span
+              className={clsx(
+                'inline-flex items-center rounded-[4px] px-[4px] py-[1px] text-[10px] font-semibold leading-[14px]',
+                state === 'PUBLISHED' && 'bg-green-500/15 text-green-500',
+                state === 'ERROR' && 'bg-red-500/15 text-red-500',
+                state === 'DRAFT' && 'bg-slate-500/15 text-slate-400',
+                state === 'QUEUE' &&
+                  (dayjs().isAfter(dayjs.utc(post.publishDate))
+                    ? 'bg-amber-500/15 text-amber-500'
+                    : 'bg-blue-500/15 text-blue-400')
+              )}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={
+                state === 'ERROR'
+                  ? post.error || t('status_failed_tip', 'Publishing failed')
+                  : undefined
+              }
+            >
+              {state === 'PUBLISHED'
+                ? t('status_live', 'Live')
+                : state === 'ERROR'
+                ? t('status_failed', 'Failed')
+                : state === 'DRAFT'
+                ? t('draft', 'Draft')
+                : dayjs().isAfter(dayjs.utc(post.publishDate))
+                ? t('status_not_published', 'Not published')
+                : t('status_scheduled', 'Scheduled')}
+            </span>
           </div>
             <div className="w-full relative">
               <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">

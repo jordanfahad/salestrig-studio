@@ -739,6 +739,30 @@ export const MultiMediaComponent: FC<{
     [currentMedia]
   );
 
+  // Explicit reorder controls: the drag handle already reorders, but it is
+  // easy to miss - these arrows make ordering discoverable. Order here is the
+  // order the platforms receive the media in.
+  const moveMedia = useCallback(
+    (topIndex: number, direction: -1 | 1) => () => {
+      if (!currentMedia) return;
+      const target = topIndex + direction;
+      if (target < 0 || target >= currentMedia.length) return;
+      const newMedia = [...currentMedia];
+      [newMedia[topIndex], newMedia[target]] = [
+        newMedia[target],
+        newMedia[topIndex],
+      ];
+      setCurrentMedia(newMedia);
+      onChange({
+        target: {
+          name,
+          value: newMedia,
+        },
+      });
+    },
+    [currentMedia]
+  );
+
   const designMedia = useCallback(() => {
     if (!!user?.tier?.ai && !dummy) {
       modals.openModal({
@@ -818,6 +842,24 @@ export const MultiMediaComponent: FC<{
                       onClick={clearMedia(index)}
                       className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
                     />
+                    {index > 0 && (
+                      <div
+                        onClick={moveMedia(index, -1)}
+                        title={t('move_media_earlier', 'Move earlier')}
+                        className="absolute -start-[5px] -bottom-[5px] z-[20] w-[14px] h-[14px] rounded-full bg-white text-black text-[10px] leading-[13px] text-center font-bold cursor-pointer select-none"
+                      >
+                        ‹
+                      </div>
+                    )}
+                    {index < currentMedia.length - 1 && (
+                      <div
+                        onClick={moveMedia(index, 1)}
+                        title={t('move_media_later', 'Move later')}
+                        className="absolute -end-[5px] -bottom-[5px] z-[20] w-[14px] h-[14px] rounded-full bg-white text-black text-[10px] leading-[13px] text-center font-bold cursor-pointer select-none"
+                      >
+                        ›
+                      </div>
+                    )}
                   </div>
               ))}
             </ReactSortable>
