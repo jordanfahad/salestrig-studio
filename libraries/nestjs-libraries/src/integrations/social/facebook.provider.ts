@@ -697,14 +697,15 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    // Metrics current as of Graph API v23+: Meta deprecated the impressions
-    // family and page_post_engagements on 2025-11-15 (replaced by the "views"
-    // metrics). One dead metric fails the WHOLE insights call, so this list
-    // must only contain live metrics. this.fetch (not raw fetch) so real
-    // token errors surface as RefreshToken instead of silently returning [].
+    // Metric list LIVE-TESTED against the Graph API on 2026-07-17: the
+    // impressions family and page_fan_adds return "(#100) not a valid insights
+    // metric"; these four all return data. One dead metric fails the WHOLE
+    // insights call, so never add a metric here without testing it against a
+    // real page first. this.fetch (not raw fetch) so real token errors surface
+    // as RefreshToken instead of silently returning [].
     const { data } = await (
       await this.fetch(
-        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_media_view,page_daily_follows_unique,page_video_views,page_fan_adds&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_media_view,page_daily_follows_unique,page_video_views,page_post_engagements&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
@@ -714,10 +715,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           d.name === 'page_media_view'
             ? 'Page views'
             : d.name === 'page_daily_follows_unique'
-            ? 'Page followers'
+            ? 'New followers'
             : d.name === 'page_video_views'
             ? 'Videos views'
-            : 'New page likes',
+            : 'Posts engagement',
         percentageChange: 5,
         data: d?.values?.map((v: any) => ({
           total: v.value,
@@ -737,12 +738,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Fetch post insights from Facebook Graph API
-      // post_impressions_unique and post_reactions_by_type_total were removed
-      // in Meta's 2025-11-15 Page Insights deprecation; post_media_view is the
-      // replacement views metric. Only live metrics may be requested.
+      // Metric list LIVE-TESTED against a real published post on 2026-07-17:
+      // post_impressions_unique is dead (impressions family removed 2025-11-15,
+      // post_media_view is its replacement); these four all return data.
       const { data } = await (
         await this.fetch(
-          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_media_view,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_media_view,post_clicks,post_clicks_by_type,post_reactions_by_type_total&access_token=${accessToken}`
         )
       ).json();
 
@@ -776,6 +777,16 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Clicks by Type';
               total = String(totalClicks);
+            }
+            break;
+          case 'post_reactions_by_type_total':
+            // This returns an object with reaction types
+            if (typeof value === 'object') {
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Reactions';
+              total = String(totalReactions);
             }
             break;
         }

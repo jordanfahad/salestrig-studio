@@ -121,9 +121,16 @@ const AnalyticsCard: FC<{
   );
 };
 
-const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
+const EmptyState: FC<{ onRefresh: () => void; needsRefresh: boolean }> = ({
+  onRefresh,
+  needsRefresh,
+}) => {
   const t = useT();
 
+  // Honest empty state: only claim the channel "needs to be refreshed" when it
+  // is actually flagged. An empty analytics response can also just mean the
+  // platform reported no data for the period - telling the user to reconnect
+  // in that case sends them in circles.
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-[48px] px-[24px] bg-newTableHeader border border-newTableBorder rounded-[12px]">
       <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[#612bd3]/10 flex items-center justify-center">
@@ -141,10 +148,15 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
         </svg>
       </div>
       <p className="text-[15px] text-newTableText text-center mb-[12px]">
-        {t(
-          'this_channel_needs_to_be_refreshed',
-          'This channel needs to be refreshed to display analytics'
-        )}
+        {needsRefresh
+          ? t(
+              'this_channel_needs_to_be_refreshed',
+              'This channel needs to be refreshed to display analytics'
+            )
+          : t(
+              'no_analytics_data_yet',
+              'No analytics data for this channel yet. It can take a day for new activity to appear. If you think something is wrong, reconnect the channel below.'
+            )}
       </p>
       <button
         onClick={onRefresh}
@@ -161,7 +173,9 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
           <path d="M23 4v6h-6M1 20v-6h6" />
           <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
         </svg>
-        {t('refresh_channel', 'Refresh Channel')}
+        {needsRefresh
+          ? t('refresh_channel', 'Refresh Channel')
+          : t('reconnect_channel', 'Reconnect Channel')}
       </button>
     </div>
   );
@@ -239,7 +253,10 @@ export const RenderAnalytics: FC<{
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
       {data?.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration as any)} />
+        <EmptyState
+          onRefresh={refreshChannel(integration as any)}
+          needsRefresh={Boolean((integration as any)?.refreshNeeded)}
+        />
       )}
       {data?.map((item: AnalyticsDataItem, index: number) => (
         <AnalyticsCard
