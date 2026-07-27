@@ -10,7 +10,9 @@ export class OrganizationRepository {
   constructor(
     private _organization: PrismaRepository<'organization'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
-    private _user: PrismaRepository<'user'>
+    private _user: PrismaRepository<'user'>,
+    private _customer: PrismaRepository<'customer'>,
+    private _userOrgCustomer: PrismaRepository<'userOrganizationCustomer'>
   ) {}
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
@@ -179,8 +181,15 @@ export class OrganizationRepository {
             userId,
           },
           select: {
+            id: true,
             disabled: true,
             role: true,
+            // Per-client delegation: empty means unrestricted (see customer.scope.ts)
+            customers: {
+              select: {
+                customerId: true,
+              },
+            },
           },
         },
         subscription: {
@@ -335,7 +344,19 @@ export class OrganizationRepository {
       select: {
         users: {
           select: {
+            // membership id - the handle used to assign clients to this member
+            id: true,
             role: true,
+            customers: {
+              select: {
+                customer: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
             user: {
               select: {
                 email: true,
@@ -349,6 +370,47 @@ export class OrganizationRepository {
         },
       },
     });
+  }
+
+  /**
+   * Replace a member's client assignments. An empty list restores full access.
+   * Both the membership and every client id are re-checked against this
+   * organization, so an admin of one workspace can never reference another's.
+   */
+  async setTeamMemberCustomers(
+    orgId: string,
+    userOrganizationId: string,
+    customerIds: string[]
+  ) {
+    const membership = await this._userOrg.model.userOrganization.findFirst({
+      where: { id: userOrganizationId, organizationId: orgId },
+    });
+
+    if (!membership) {
+      throw new Error('Member is not part of this organization');
+    }
+
+    const validCustomers = customerIds.length
+      ? await this._customer.model.customer.findMany({
+          where: { id: { in: customerIds }, orgId, deletedAt: null },
+          select: { id: true },
+        })
+      : [];
+
+    await this._userOrgCustomer.model.userOrganizationCustomer.deleteMany({
+      where: { userOrganizationId },
+    });
+
+    if (validCustomers.length) {
+      await this._userOrgCustomer.model.userOrganizationCustomer.createMany({
+        data: validCustomers.map((c: { id: string }) => ({
+          userOrganizationId,
+          customerId: c.id,
+        })),
+      });
+    }
+
+    return { assigned: validCustomers.length };
   }
 
   getAllUsersOrgs(orgId: string) {

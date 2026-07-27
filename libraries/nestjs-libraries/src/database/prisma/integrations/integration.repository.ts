@@ -483,11 +483,13 @@ export class IntegrationRepository {
     });
   }
 
-  getIntegrationsList(org: string) {
+  getIntegrationsList(org: string, customerIds?: string[] | null) {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
         deletedAt: null,
+        // Scoped members only ever see their assigned clients' channels.
+        ...(customerIds ? { customerId: { in: customerIds } } : {}),
       },
       include: {
         customer: true,

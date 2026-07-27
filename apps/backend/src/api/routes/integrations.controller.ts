@@ -12,6 +12,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { Organization, User } from '@prisma/client';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -90,7 +91,10 @@ export class IntegrationsController {
     return {
       integrations: await Promise.all(
         (
-          await this._integrationService.getIntegrationsList(org.id)
+          await this._integrationService.getIntegrationsList(
+            org.id,
+            allowedCustomerIds(org)
+          )
         ).map(async (p) => {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
@@ -392,18 +396,20 @@ export class IntegrationsController {
   }
 
   @Post('/disable')
-  disableChannel(
+  async disableChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.disableChannel(org.id, id);
   }
 
   @Post('/enable')
-  enableChannel(
+  async enableChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.enableChannel(
       org.id,
       // @ts-ignore
@@ -417,6 +423,7 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     const isTherePosts = await this._integrationService.getPostsForChannel(
       org.id,
       id

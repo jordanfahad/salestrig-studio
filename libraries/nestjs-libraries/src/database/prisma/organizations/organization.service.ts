@@ -65,8 +65,28 @@ export class OrganizationService {
     return this._organizationRepository.updateApiKey(orgId);
   }
 
-  getTeam(orgId: string) {
-    return this._organizationRepository.getTeam(orgId);
+  async getTeam(orgId: string) {
+    const team = await this._organizationRepository.getTeam(orgId);
+    return {
+      ...team,
+      users: (team?.users || []).map((u: any) => ({
+        ...u,
+        // flatten to [{ id, name }] for the client
+        customers: (u.customers || []).map((c: any) => c.customer),
+      })),
+    };
+  }
+
+  setTeamMemberCustomers(
+    orgId: string,
+    userOrganizationId: string,
+    customerIds: string[]
+  ) {
+    return this._organizationRepository.setTeamMemberCustomers(
+      orgId,
+      userOrganizationId,
+      customerIds
+    );
   }
 
   async setStreak(organizationId: string, type: 'start' | 'end') {

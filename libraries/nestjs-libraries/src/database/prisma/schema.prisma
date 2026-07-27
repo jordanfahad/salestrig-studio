@@ -136,18 +136,35 @@ model UsedCodes {
 }
 
 model UserOrganization {
-  id             String       @id @default(uuid())
+  id             String                     @id @default(uuid())
   userId         String
   organizationId String
-  disabled       Boolean      @default(false)
-  role           Role         @default(USER)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
+  disabled       Boolean                    @default(false)
+  role           Role                       @default(USER)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  organization   Organization               @relation(fields: [organizationId], references: [id])
+  user           User                       @relation(fields: [userId], references: [id])
+  customers      UserOrganizationCustomer[]
 
   @@unique([userId, organizationId])
   @@index([disabled])
+}
+
+// Per-client (Customer) delegation for agency workspaces.
+// NO rows for a member == full access to every channel (backwards compatible,
+// and how the owner/admin stays unrestricted). One or more rows == that member
+// may only see and act on channels belonging to those clients.
+model UserOrganizationCustomer {
+  id                 String           @id @default(uuid())
+  userOrganizationId String
+  customerId         String
+  createdAt          DateTime         @default(now())
+  userOrganization   UserOrganization @relation(fields: [userOrganizationId], references: [id], onDelete: Cascade)
+  customer           Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([userOrganizationId, customerId])
+  @@index([customerId])
 }
 
 model GitHub {
@@ -301,14 +318,15 @@ model Subscription {
 }
 
 model Customer {
-  id           String        @id @default(uuid())
-  name         String
-  orgId        String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  organization Organization  @relation(fields: [orgId], references: [id])
-  integrations Integration[]
+  id              String                     @id @default(uuid())
+  name            String
+  orgId           String
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  deletedAt       DateTime?
+  organization    Organization               @relation(fields: [orgId], references: [id])
+  integrations    Integration[]
+  assignedMembers UserOrganizationCustomer[]
 
   @@unique([orgId, name, deletedAt])
 }

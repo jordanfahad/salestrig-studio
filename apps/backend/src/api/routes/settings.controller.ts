@@ -36,6 +36,23 @@ export class SettingsController {
     return this._organizationService.inviteTeamMember(org.id, body);
   }
 
+  @Post('/team/:id/customers')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async setTeamMemberCustomers(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { customerIds?: string[] }
+  ) {
+    return this._organizationService.setTeamMemberCustomers(
+      org.id,
+      id,
+      Array.isArray(body?.customerIds) ? body.customerIds : []
+    );
+  }
+
   @Delete('/team/:id')
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],

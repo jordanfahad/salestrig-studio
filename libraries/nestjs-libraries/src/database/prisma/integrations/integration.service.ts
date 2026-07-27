@@ -25,6 +25,8 @@ import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 
 dayjs.extend(utc);
 
@@ -144,8 +146,27 @@ export class IntegrationService {
     return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
-  getIntegrationsList(org: string) {
-    return this._integrationRepository.getIntegrationsList(org);
+  getIntegrationsList(org: string, customerIds?: string[] | null) {
+    return this._integrationRepository.getIntegrationsList(org, customerIds);
+  }
+
+  /**
+   * Throws when a scoped member touches a channel outside their clients.
+   * Used by every channel mutation route - these had no authorization at all,
+   * so any member could disable or permanently delete any channel.
+   */
+  async assertChannelInScope(org: any, integrationId: string) {
+    const allowed = allowedCustomerIds(org);
+    if (!allowed) {
+      return;
+    }
+    const integration = await this._integrationRepository.getIntegrationById(
+      org.id,
+      integrationId
+    );
+    if (!integration?.customerId || !allowed.includes(integration.customerId)) {
+      throw new HttpForbiddenException();
+    }
   }
 
   getIntegrationForOrder(id: string, order: string, user: string, org: string) {

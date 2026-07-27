@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
@@ -114,7 +115,11 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
-    return this._postsService.getPostsMinified(org.id, query);
+    return this._postsService.getPostsMinified(
+      org.id,
+      query,
+      allowedCustomerIds(org)
+    );
   }
 
   @Get('/find-slot')
@@ -135,7 +140,11 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsListDto
   ) {
-    return this._postsService.getPostsList(org.id, query);
+    return this._postsService.getPostsList(
+      org.id,
+      query,
+      allowedCustomerIds(org)
+    );
   }
 
   @Get('/old')

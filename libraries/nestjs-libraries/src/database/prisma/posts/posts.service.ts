@@ -325,19 +325,31 @@ export class PostsService {
     ];
   }
 
-  async getPosts(orgId: string, query: GetPostsDto) {
-    return this._postRepository.getPosts(orgId, query);
+  async getPosts(
+    orgId: string,
+    query: GetPostsDto,
+    customerIds?: string[] | null
+  ) {
+    return this._postRepository.getPosts(orgId, query, customerIds);
   }
 
-  async getPostsMinified(orgId: string, query: GetPostsDto) {
+  async getPostsMinified(
+    orgId: string,
+    query: GetPostsDto,
+    customerIds?: string[] | null
+  ) {
     return minifyPosts({
-      posts: await this._postRepository.getPosts(orgId, query),
+      posts: await this._postRepository.getPosts(orgId, query, customerIds),
     });
   }
 
-  async getPostsList(orgId: string, query: GetPostsListDto) {
+  async getPostsList(
+    orgId: string,
+    query: GetPostsListDto,
+    customerIds?: string[] | null
+  ) {
     return minifyPostsList(
-      await this._postRepository.getPostsList(orgId, query)
+      await this._postRepository.getPostsList(orgId, query, customerIds)
     );
   }
 

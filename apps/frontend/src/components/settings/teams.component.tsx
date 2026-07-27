@@ -3,7 +3,7 @@
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import React, { useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -28,6 +28,21 @@ const roles = [
     value: 'ADMIN',
   },
 ];
+
+interface Customer {
+  id: string;
+  name: string;
+}
+
+interface TeamMember {
+  id: string;
+  role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+  user: {
+    email: string;
+    id: string;
+  };
+  customers?: Customer[];
+}
 export const AddMember = () => {
   const modals = useModals();
   const fetch = useFetch();
@@ -105,6 +120,108 @@ export const AddMember = () => {
     </FormProvider>
   );
 };
+export const ManageAccess: FC<{
+  member: TeamMember;
+  reload: () => Promise<any>;
+}> = (props) => {
+  const { member, reload } = props;
+  const modals = useModals();
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const [selected, setSelected] = useState<string[]>(
+    (member.customers || []).map((customer) => customer.id)
+  );
+  const [saving, setSaving] = useState(false);
+  const loadCustomers = useCallback(async () => {
+    return (await (
+      await fetch('/integrations/customers')
+    ).json()) as Customer[];
+  }, []);
+  const { data, isLoading } = useSWR('/api/customers', loadCustomers, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+  const toggle = useCallback(
+    (id: string) => () => {
+      setSelected((current) =>
+        current.includes(id)
+          ? current.filter((current2) => current2 !== id)
+          : [...current, id]
+      );
+    },
+    []
+  );
+  const save = useCallback(async () => {
+    setSaving(true);
+    await fetch(`/settings/team/${member.id}/customers`, {
+      method: 'POST',
+      body: JSON.stringify({
+        customerIds: selected,
+      }),
+    });
+    await reload();
+    setSaving(false);
+    modals.closeAll();
+    toast.show(t('client_access_updated', 'Client access updated'));
+  }, [member.id, selected, reload, t]);
+
+  return (
+    <div className="relative flex flex-col gap-[16px] w-full max-w-full p-[16px] pt-0">
+      <div className="text-customColor18 text-[14px]">
+        {t(
+          'pick_the_clients_this_member_can_work_on',
+          'Pick the clients this member can work on. If you leave everything unchecked, the member can access ALL clients.'
+        )}
+      </div>
+      {isLoading ? (
+        <div className="text-customColor18">{t('loading', 'Loading...')}</div>
+      ) : !(data || []).length ? (
+        <div className="text-customColor18">
+          {t(
+            'no_clients_yet_in_this_workspace',
+            'There are no clients yet in this workspace. Assign a client to a channel first.'
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[12px] max-h-[320px] overflow-y-auto">
+          {(data || []).map((customer) => (
+            <div
+              key={customer.id}
+              className="flex gap-[8px] items-center cursor-pointer"
+              onClick={toggle(customer.id)}
+            >
+              <div>
+                <Checkbox
+                  disableForm={true}
+                  checked={selected.includes(customer.id)}
+                  variant="hollow"
+                />
+              </div>
+              <div className="break-words">{customer.name}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div>
+        {!selected.length
+          ? t(
+              'this_member_will_have_access_to_all_clients',
+              'This member will have access to all clients.'
+            )
+          : t(
+              'this_member_will_only_have_access_to_the_selected_clients',
+              'This member will only have access to the selected clients.'
+            )}
+      </div>
+      <div>
+        <Button onClick={save} loading={saving}>
+          {t('save_access', 'Save access')}
+        </Button>
+      </div>
+    </div>
+  );
+};
 export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -117,14 +234,8 @@ export const TeamsComponent = () => {
     []
   );
   const loadTeam = useCallback(async () => {
-    return (await (await fetch('/settings/team')).json()).users as Array<{
-      id: string;
-      role: 'SUPERADMIN' | 'ADMIN' | 'USER';
-      user: {
-        email: string;
-        id: string;
-      };
-    }>;
+    const load = await (await fetch('/settings/team')).json();
+    return (Array.isArray(load) ? load : load.users) as TeamMember[];
   }, []);
   const addMember = useCallback(() => {
     modals.openModal({
@@ -162,6 +273,19 @@ export const TeamsComponent = () => {
       },
     [t]
   );
+  const manageAccess = useCallback(
+    (member: TeamMember) => () => {
+      modals.openModal({
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        title: t('top_title_manage_access', 'Manage client access'),
+        withCloseButton: true,
+        children: <ManageAccess member={member} reload={mutate} />,
+      });
+    },
+    [t, mutate]
+  );
 
   return (
     <div className="flex flex-col">
@@ -175,19 +299,47 @@ export const TeamsComponent = () => {
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
           {(data || []).map((p) => (
-            <div key={p.user.id} className="flex items-center">
-              <div className="flex-1">
+            <div
+              key={p.user.id}
+              className="flex items-center gap-[8px] flex-wrap mobile:flex-col mobile:items-start"
+            >
+              <div className="flex-1 min-w-[120px] break-words">
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-[80px]">
                 {p.role === 'USER'
                   ? t('user', 'User')
                   : p.role === 'ADMIN'
                   ? t('admin', 'Admin')
                   : t('super_admin', 'Super Admin')}
               </div>
-              {+myLevel > +getLevel(p.role) ? (
-                <div className="flex-1 flex justify-end">
+              <div className="flex-1 min-w-[120px] flex flex-wrap gap-[4px]">
+                {p.role === 'SUPERADMIN' || !p.customers?.length ? (
+                  <div className="text-customColor18 text-[12px]">
+                    {t('all_clients', 'All clients')}
+                  </div>
+                ) : (
+                  p.customers.map((customer) => (
+                    <div
+                      key={customer.id}
+                      className="bg-customColor3 border border-customColor21 rounded-[4px] px-[8px] py-[2px] text-[12px] break-words"
+                    >
+                      {customer.name}
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex-1 flex justify-end gap-[8px] flex-wrap mobile:justify-start">
+                {p.role !== 'SUPERADMIN' && (
+                  <Button
+                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
+                    onClick={manageAccess(p)}
+                    secondary={true}
+                  >
+                    {t('manage_access', 'Manage access')}
+                  </Button>
+                )}
+                {+myLevel > +getLevel(p.role) && (
                   <Button
                     className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
                     onClick={remove(p)}
@@ -211,10 +363,8 @@ export const TeamsComponent = () => {
                       <div>{t('remove', 'Remove')}</div>
                     </div>
                   </Button>
-                </div>
-              ) : (
-                <div className="flex-1" />
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
