@@ -34,6 +34,18 @@ interface Customer {
   name: string;
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const minPasswordLength = 8;
+
+const readErrorMessage = async (response: any): Promise<string> => {
+  try {
+    const body = await response.json();
+    return typeof body?.message === 'string' ? body.message : '';
+  } catch (err) {
+    return '';
+  }
+};
+
 interface TeamMember {
   id: string;
   role: 'SUPERADMIN' | 'ADMIN' | 'USER';
@@ -222,6 +234,286 @@ export const ManageAccess: FC<{
     </div>
   );
 };
+export const CreateMember: FC<{
+  reload: () => Promise<any>;
+}> = (props) => {
+  const { reload } = props;
+  const modals = useModals();
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('USER');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const loadCustomers = useCallback(async () => {
+    return (await (
+      await fetch('/integrations/customers')
+    ).json()) as Customer[];
+  }, []);
+  const { data, isLoading } = useSWR('/api/customers', loadCustomers, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+  const toggle = useCallback(
+    (id: string) => () => {
+      setSelected((current) =>
+        current.includes(id)
+          ? current.filter((current2) => current2 !== id)
+          : [...current, id]
+      );
+    },
+    []
+  );
+  const changeEmail = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setEmailError('');
+  }, []);
+  const changePassword = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPassword(e.target.value);
+      setPasswordError('');
+    },
+    []
+  );
+  const changeRole = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRole(e.target.value);
+  }, []);
+  const save = useCallback(async () => {
+    const cleanEmail = email.trim();
+    const nextEmailError = !emailRegex.test(cleanEmail)
+      ? t('please_enter_a_valid_email_address', 'Please enter a valid email address')
+      : '';
+    const nextPasswordError =
+      password.length < minPasswordLength
+        ? t(
+            'password_must_be_at_least_8_characters',
+            'Password must be at least 8 characters'
+          )
+        : '';
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+    if (nextEmailError || nextPasswordError) {
+      return;
+    }
+    setSaving(true);
+    const response = await fetch('/settings/team/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: cleanEmail,
+        password,
+        role,
+        customerIds: selected,
+      }),
+    });
+    if (!response.ok) {
+      setSaving(false);
+      const message = await readErrorMessage(response);
+      toast.show(
+        message || t('could_not_create_the_login', 'Could not create the login'),
+        'warning'
+      );
+      return;
+    }
+    await reload();
+    setSaving(false);
+    modals.closeAll();
+    toast.show(
+      t(
+        'login_created_share_the_credentials_privately',
+        'Login created. Share the email and password privately with the person, this workspace cannot send emails.'
+      )
+    );
+  }, [email, password, role, selected, reload, t]);
+
+  return (
+    <div className="relative flex flex-col gap-[16px] w-full max-w-full p-[16px] pt-0">
+      <div className="text-customColor18 text-[14px]">
+        {t(
+          'create_a_login_directly_no_email_is_sent',
+          'Create a login directly. No email is sent, so you need to pass the email and password to the person yourself.'
+        )}
+      </div>
+      <Input
+        label="Email"
+        name="createMemberEmail"
+        type="email"
+        autoComplete="off"
+        placeholder={t('enter_email', 'Enter email')}
+        disableForm={true}
+        value={email}
+        onChange={changeEmail}
+        error={emailError}
+      />
+      <Input
+        label="Password"
+        name="createMemberPassword"
+        type="password"
+        autoComplete="new-password"
+        placeholder={t(
+          'at_least_8_characters',
+          'At least 8 characters'
+        )}
+        disableForm={true}
+        value={password}
+        onChange={changePassword}
+        error={passwordError}
+      />
+      <Select
+        label="Role"
+        name="createMemberRole"
+        disableForm={true}
+        hideErrors={true}
+        value={role}
+        onChange={changeRole}
+      >
+        {roles.map((roleOption) => (
+          <option key={roleOption.value} value={roleOption.value}>
+            {roleOption.value === 'ADMIN' ? t('admin', 'Admin') : t('user', 'User')}
+          </option>
+        ))}
+      </Select>
+      <div className="text-customColor18 text-[14px]">
+        {t(
+          'pick_the_clients_this_member_can_work_on',
+          'Pick the clients this member can work on. If you leave everything unchecked, the member can access ALL clients.'
+        )}
+      </div>
+      {isLoading ? (
+        <div className="text-customColor18">{t('loading', 'Loading...')}</div>
+      ) : !(data || []).length ? (
+        <div className="text-customColor18">
+          {t(
+            'no_clients_yet_in_this_workspace',
+            'There are no clients yet in this workspace. Assign a client to a channel first.'
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[12px] max-h-[240px] overflow-y-auto">
+          {(data || []).map((customer) => (
+            <div
+              key={customer.id}
+              className="flex gap-[8px] items-center cursor-pointer"
+              onClick={toggle(customer.id)}
+            >
+              <div>
+                <Checkbox
+                  disableForm={true}
+                  checked={selected.includes(customer.id)}
+                  variant="hollow"
+                />
+              </div>
+              <div className="break-words">{customer.name}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div>
+        {!selected.length
+          ? t(
+              'this_member_will_have_access_to_all_clients',
+              'This member will have access to all clients.'
+            )
+          : t(
+              'this_member_will_only_have_access_to_the_selected_clients',
+              'This member will only have access to the selected clients.'
+            )}
+      </div>
+      <div>
+        <Button onClick={save} loading={saving}>
+          {t('create_login', 'Create login')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+export const SetPassword: FC<{
+  member: TeamMember;
+}> = (props) => {
+  const { member } = props;
+  const modals = useModals();
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const changePassword = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPassword(e.target.value);
+      setPasswordError('');
+    },
+    []
+  );
+  const save = useCallback(async () => {
+    if (password.length < minPasswordLength) {
+      setPasswordError(
+        t(
+          'password_must_be_at_least_8_characters',
+          'Password must be at least 8 characters'
+        )
+      );
+      return;
+    }
+    setPasswordError('');
+    setSaving(true);
+    const response = await fetch(`/settings/team/${member.id}/password`, {
+      method: 'POST',
+      body: JSON.stringify({
+        password,
+      }),
+    });
+    if (!response.ok) {
+      setSaving(false);
+      const message = await readErrorMessage(response);
+      toast.show(
+        message ||
+          t('could_not_update_the_password', 'Could not update the password'),
+        'warning'
+      );
+      return;
+    }
+    setSaving(false);
+    modals.closeAll();
+    toast.show(
+      t(
+        'password_updated_share_it_privately',
+        'Password updated. Share the new password privately with the person, this workspace cannot send emails.'
+      )
+    );
+  }, [member.id, password, t]);
+
+  return (
+    <div className="relative flex flex-col gap-[16px] w-full max-w-full p-[16px] pt-0">
+      <div className="text-customColor18 text-[14px] break-words">
+        {t(
+          'set_a_new_password_for_this_member',
+          'Set a new password for this member and hand it over privately. Their current password stops working right away.'
+        )}
+      </div>
+      <div className="break-words">{member.user.email}</div>
+      <Input
+        label="New password"
+        name="setMemberPassword"
+        type="password"
+        autoComplete="new-password"
+        placeholder={t('at_least_8_characters', 'At least 8 characters')}
+        disableForm={true}
+        value={password}
+        onChange={changePassword}
+        error={passwordError}
+      />
+      <div>
+        <Button onClick={save} loading={saving}>
+          {t('save_password', 'Save password')}
+        </Button>
+      </div>
+    </div>
+  );
+};
 export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -286,6 +578,29 @@ export const TeamsComponent = () => {
     },
     [t, mutate]
   );
+  const createLogin = useCallback(() => {
+    modals.openModal({
+      classNames: {
+        modal: 'bg-transparent text-textColor',
+      },
+      title: t('top_title_create_login', 'Create login'),
+      withCloseButton: true,
+      children: <CreateMember reload={mutate} />,
+    });
+  }, [t, mutate]);
+  const setPassword = useCallback(
+    (member: TeamMember) => () => {
+      modals.openModal({
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        title: t('top_title_set_password', 'Set password'),
+        withCloseButton: true,
+        children: <SetPassword member={member} />,
+      });
+    },
+    [t]
+  );
 
   return (
     <div className="flex flex-col">
@@ -339,6 +654,15 @@ export const TeamsComponent = () => {
                     {t('manage_access', 'Manage access')}
                   </Button>
                 )}
+                {p.role !== 'SUPERADMIN' && (
+                  <Button
+                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
+                    onClick={setPassword(p)}
+                    secondary={true}
+                  >
+                    {t('set_password', 'Set password')}
+                  </Button>
+                )}
                 {+myLevel > +getLevel(p.role) && (
                   <Button
                     className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
@@ -368,9 +692,12 @@ export const TeamsComponent = () => {
             </div>
           ))}
         </div>
-        <div>
+        <div className="flex gap-[8px] flex-wrap">
           <Button onClick={addMember}>
             {t('add_another_member', 'Add another member')}
+          </Button>
+          <Button onClick={createLogin} secondary={true}>
+            {t('create_login', 'Create login')}
           </Button>
         </div>
       </div>

@@ -373,6 +373,86 @@ export class OrganizationRepository {
   }
 
   /**
+   * Create a login directly and place it in this organization.
+   *
+   * Used instead of the invite-link flow on instances with no email provider.
+   * The caller is already gated to ADMIN/SUPERADMIN by the controller policy;
+   * SUPERADMIN cannot be granted here (see the DTO).
+   */
+  async createTeamMemberDirect(
+    orgId: string,
+    email: string,
+    hashedPassword: string,
+    role: 'USER' | 'ADMIN',
+    customerIds: string[]
+  ) {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Login lookups are provider-scoped and case sensitive, so store lowercase
+    // and refuse duplicates rather than silently shadowing an existing login.
+    const existing = await this._user.model.user.findFirst({
+      where: { email: normalizedEmail, providerName: 'LOCAL' },
+    });
+
+    if (existing) {
+      throw new Error(
+        'A login with this email already exists. Use the invite link to add them instead.'
+      );
+    }
+
+    const user = await this._user.model.user.create({
+      data: {
+        email: normalizedEmail,
+        password: hashedPassword,
+        providerName: 'LOCAL',
+        providerId: '',
+        timezone: 0,
+        // No email provider means no activation mail could ever arrive.
+        activated: true,
+      },
+    });
+
+    const membership = await this._userOrg.model.userOrganization.create({
+      data: {
+        userId: user.id,
+        organizationId: orgId,
+        role,
+      },
+    });
+
+    if (customerIds?.length) {
+      await this.setTeamMemberCustomers(orgId, membership.id, customerIds);
+    }
+
+    return { id: membership.id, email: user.email };
+  }
+
+  /**
+   * Admin-set password for a member of this organization. Scoped by orgId so
+   * an admin can never reset a password for someone outside their workspace.
+   */
+  async setTeamMemberPassword(
+    orgId: string,
+    userOrganizationId: string,
+    hashedPassword: string
+  ) {
+    const membership = await this._userOrg.model.userOrganization.findFirst({
+      where: { id: userOrganizationId, organizationId: orgId },
+    });
+
+    if (!membership) {
+      throw new Error('Member is not part of this organization');
+    }
+
+    await this._user.model.user.update({
+      where: { id: membership.userId },
+      data: { password: hashedPassword },
+    });
+
+    return { ok: true };
+  }
+
+  /**
    * Replace a member's client assignments. An empty list restores full access.
    * Both the membership and every client id are re-checked against this
    * organization, so an admin of one workspace can never reference another's.

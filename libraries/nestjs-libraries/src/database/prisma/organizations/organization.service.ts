@@ -77,6 +77,34 @@ export class OrganizationService {
     };
   }
 
+  createTeamMemberDirect(
+    orgId: string,
+    email: string,
+    password: string,
+    role: 'USER' | 'ADMIN',
+    customerIds: string[] = []
+  ) {
+    return this._organizationRepository.createTeamMemberDirect(
+      orgId,
+      email,
+      AuthService.hashPassword(password),
+      role,
+      customerIds
+    );
+  }
+
+  setTeamMemberPassword(
+    orgId: string,
+    userOrganizationId: string,
+    password: string
+  ) {
+    return this._organizationRepository.setTeamMemberPassword(
+      orgId,
+      userOrganizationId,
+      AuthService.hashPassword(password)
+    );
+  }
+
   setTeamMemberCustomers(
     orgId: string,
     userOrganizationId: string,
