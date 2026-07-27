@@ -403,6 +403,10 @@ export class InstagramProvider
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
+        // Force Meta to re-show the dialog instead of silently reusing the
+        // Pages granted on a previous connect - without this you can never
+        // add a second account, because Meta returns only the old selection.
+        `&auth_type=rerequest` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
