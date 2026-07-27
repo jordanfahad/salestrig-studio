@@ -12,7 +12,11 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { channelScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import {
+  channelScopeWhere,
+  hasChannelRestriction,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { Organization, User } from '@prisma/client';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -91,6 +95,9 @@ export class IntegrationsController {
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
     return {
+      // Lets the UI hide "Add Channel" for a member who is limited to a fixed
+      // set, instead of offering a button that can only ever fail.
+      restricted: hasChannelRestriction(org),
       integrations: await Promise.all(
         (
           await this._integrationService.getIntegrationsList(
@@ -209,6 +216,15 @@ export class IntegrationsController {
     @Query('onboarding') onboarding: string,
     @GetOrgFromRequest() org: Organization
   ) {
+    // A member limited to specific channels may re-authorize one of their own,
+    // but must not connect brand new ones: the workspace would be billed for a
+    // channel that, not being in their assignment list, they could never see.
+    if (refresh) {
+      await this._integrationService.assertChannelInScope(org, refresh);
+    } else if (hasChannelRestriction(org)) {
+      throw new HttpForbiddenException();
+    }
+
     if (
       !this._integrationManager
         .getAllowedSocialsIntegrations()

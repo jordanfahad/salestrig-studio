@@ -540,7 +540,9 @@ export const LaunchesComponent = () => {
               </div>
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
-              <AddProviderButton update={() => update(true)} />
+              {!user?.channelRestricted && (
+                <AddProviderButton update={() => update(true)} />
+              )}
               <div className="flex gap-[8px] group-[.sidebar]:flex-col">
                 {sortedIntegrations?.length > 0 && <NewPost />}
                 {sortedIntegrations?.length > 0 &&

@@ -19,6 +19,8 @@ export const UserContext = createContext<
       allowTrial: boolean;
       isTrailing: boolean;
       streakSince: string | null;
+      /** Member limited to a fixed set of channels by the workspace owner. */
+      channelRestricted?: boolean;
     })
 >(undefined);
 export const ContextWrapper: FC<{
