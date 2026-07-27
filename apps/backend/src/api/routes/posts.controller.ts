@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import { postScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
@@ -118,7 +118,7 @@ export class PostsController {
     return this._postsService.getPostsMinified(
       org.id,
       query,
-      allowedCustomerIds(org)
+      postScopeWhere(org, query.customer)
     );
   }
 
@@ -143,7 +143,7 @@ export class PostsController {
     return this._postsService.getPostsList(
       org.id,
       query,
-      allowedCustomerIds(org)
+      postScopeWhere(org, query.customer)
     );
   }
 

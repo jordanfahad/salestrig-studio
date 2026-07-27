@@ -136,16 +136,17 @@ model UsedCodes {
 }
 
 model UserOrganization {
-  id             String                     @id @default(uuid())
+  id             String                        @id @default(uuid())
   userId         String
   organizationId String
-  disabled       Boolean                    @default(false)
-  role           Role                       @default(USER)
-  createdAt      DateTime                   @default(now())
-  updatedAt      DateTime                   @updatedAt
-  organization   Organization               @relation(fields: [organizationId], references: [id])
-  user           User                       @relation(fields: [userId], references: [id])
+  disabled       Boolean                       @default(false)
+  role           Role                          @default(USER)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+  organization   Organization                  @relation(fields: [organizationId], references: [id])
+  user           User                          @relation(fields: [userId], references: [id])
   customers      UserOrganizationCustomer[]
+  channels       UserOrganizationIntegration[]
 
   @@unique([userId, organizationId])
   @@index([disabled])
@@ -155,6 +156,22 @@ model UserOrganization {
 // NO rows for a member == full access to every channel (backwards compatible,
 // and how the owner/admin stays unrestricted). One or more rows == that member
 // may only see and act on channels belonging to those clients.
+// Direct per-CHANNEL delegation: the admin ticks individual channels a member
+// may work on. Combined with UserOrganizationCustomer (whole-client shortcut):
+// a member with NO rows in either table has full access; otherwise they may
+// only reach channels assigned directly or via an assigned client.
+model UserOrganizationIntegration {
+  id                 String           @id @default(uuid())
+  userOrganizationId String
+  integrationId      String
+  createdAt          DateTime         @default(now())
+  userOrganization   UserOrganization @relation(fields: [userOrganizationId], references: [id], onDelete: Cascade)
+  integration        Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([userOrganizationId, integrationId])
+  @@index([integrationId])
+}
+
 model UserOrganizationCustomer {
   id                 String           @id @default(uuid())
   userOrganizationId String
@@ -332,35 +349,36 @@ model Customer {
 }
 
 model Integration {
-  id                    String                 @id @default(cuid())
-  internalId            String
-  organizationId        String
-  name                  String
-  picture               String?
-  providerIdentifier    String
-  type                  String
-  token                 String
-  disabled              Boolean                @default(false)
-  tokenExpiration       DateTime?
-  refreshToken          String?
-  profile               String?
-  deletedAt             DateTime?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime?              @updatedAt
-  inBetweenSteps        Boolean                @default(false)
-  refreshNeeded         Boolean                @default(false)
-  postingTimes          String                 @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
-  customInstanceDetails String?
-  customerId            String?
-  rootInternalId        String?
-  additionalSettings    String?                @default("[]")
-  exisingPlugData       ExisingPlugData[]
-  customer              Customer?              @relation(fields: [customerId], references: [id])
-  organization          Organization           @relation(fields: [organizationId], references: [id])
-  webhooks              IntegrationsWebhooks[]
-  orderItems            OrderItems[]
-  plugs                 Plugs[]
-  posts                 Post[]
+  id                          String                        @id @default(cuid())
+  internalId                  String
+  organizationId              String
+  name                        String
+  picture                     String?
+  providerIdentifier          String
+  type                        String
+  token                       String
+  disabled                    Boolean                       @default(false)
+  tokenExpiration             DateTime?
+  refreshToken                String?
+  profile                     String?
+  deletedAt                   DateTime?
+  createdAt                   DateTime                      @default(now())
+  updatedAt                   DateTime?                     @updatedAt
+  inBetweenSteps              Boolean                       @default(false)
+  refreshNeeded               Boolean                       @default(false)
+  postingTimes                String                        @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
+  customInstanceDetails       String?
+  customerId                  String?
+  rootInternalId              String?
+  additionalSettings          String?                       @default("[]")
+  exisingPlugData             ExisingPlugData[]
+  customer                    Customer?                     @relation(fields: [customerId], references: [id])
+  organization                Organization                  @relation(fields: [organizationId], references: [id])
+  webhooks                    IntegrationsWebhooks[]
+  orderItems                  OrderItems[]
+  plugs                       Plugs[]
+  posts                       Post[]
+  UserOrganizationIntegration UserOrganizationIntegration[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])

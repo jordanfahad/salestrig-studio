@@ -64,7 +64,8 @@ export class SettingsController {
         body.email,
         body.password,
         body.role,
-        body.customerIds || []
+        body.customerIds || [],
+        body.integrationIds || []
       );
     } catch (err) {
       throw new HttpException(
@@ -93,6 +94,30 @@ export class SettingsController {
     } catch (err) {
       throw new HttpException(
         (err as Error)?.message || 'Could not set the password',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  @Post('/team/:id/channels')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async setTeamMemberChannels(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { integrationIds?: string[] }
+  ) {
+    try {
+      return await this._organizationService.setTeamMemberChannels(
+        org.id,
+        id,
+        Array.isArray(body?.integrationIds) ? body.integrationIds : []
+      );
+    } catch (err) {
+      throw new HttpException(
+        (err as Error)?.message || 'Could not set channel access',
         HttpStatus.BAD_REQUEST
       );
     }

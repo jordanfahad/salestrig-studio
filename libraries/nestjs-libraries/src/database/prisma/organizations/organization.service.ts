@@ -73,6 +73,7 @@ export class OrganizationService {
         ...u,
         // flatten to [{ id, name }] for the client
         customers: (u.customers || []).map((c: any) => c.customer),
+        channels: (u.channels || []).map((c: any) => c.integration),
       })),
     };
   }
@@ -82,14 +83,28 @@ export class OrganizationService {
     email: string,
     password: string,
     role: 'USER' | 'ADMIN',
-    customerIds: string[] = []
+    customerIds: string[] = [],
+    integrationIds: string[] = []
   ) {
     return this._organizationRepository.createTeamMemberDirect(
       orgId,
       email,
       AuthService.hashPassword(password),
       role,
-      customerIds
+      customerIds,
+      integrationIds
+    );
+  }
+
+  setTeamMemberChannels(
+    orgId: string,
+    userOrganizationId: string,
+    integrationIds: string[]
+  ) {
+    return this._organizationRepository.setTeamMemberChannels(
+      orgId,
+      userOrganizationId,
+      integrationIds
     );
   }
 

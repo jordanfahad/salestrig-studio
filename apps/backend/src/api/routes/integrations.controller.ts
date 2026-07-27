@@ -12,7 +12,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import { channelScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { Organization, User } from '@prisma/client';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -93,7 +93,7 @@ export class IntegrationsController {
         (
           await this._integrationService.getIntegrationsList(
             org.id,
-            allowedCustomerIds(org)
+            channelScopeWhere(org)
           )
         ).map(async (p) => {
           const findIntegration = this._integrationManager.getSocialIntegration(

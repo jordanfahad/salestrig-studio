@@ -26,7 +26,11 @@ import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/au
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
-import { allowedCustomerIds } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import {
+  allowedCustomerIds,
+  allowedIntegrationIds,
+  hasChannelRestriction,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 
 dayjs.extend(utc);
 
@@ -146,8 +150,8 @@ export class IntegrationService {
     return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
-  getIntegrationsList(org: string, customerIds?: string[] | null) {
-    return this._integrationRepository.getIntegrationsList(org, customerIds);
+  getIntegrationsList(org: string, scope?: any) {
+    return this._integrationRepository.getIntegrationsList(org, scope);
   }
 
   /**
@@ -156,15 +160,19 @@ export class IntegrationService {
    * so any member could disable or permanently delete any channel.
    */
   async assertChannelInScope(org: any, integrationId: string) {
-    const allowed = allowedCustomerIds(org);
-    if (!allowed) {
+    if (!hasChannelRestriction(org)) {
       return;
     }
+    const channels = allowedIntegrationIds(org) || [];
+    if (channels.includes(integrationId)) {
+      return;
+    }
+    const customers = allowedCustomerIds(org) || [];
     const integration = await this._integrationRepository.getIntegrationById(
       org.id,
       integrationId
     );
-    if (!integration?.customerId || !allowed.includes(integration.customerId)) {
+    if (!integration?.customerId || !customers.includes(integration.customerId)) {
       throw new HttpForbiddenException();
     }
   }

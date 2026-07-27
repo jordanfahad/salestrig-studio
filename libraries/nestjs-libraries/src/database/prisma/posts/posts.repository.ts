@@ -16,7 +16,6 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
-import { customerScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -130,7 +129,7 @@ export class PostsRepository {
   async getPosts(
     orgId: string,
     query: GetPostsDto,
-    customerIds?: string[] | null
+    scope?: any
   ) {
     // Use the provided start and end dates directly
     const startDate = dayjs.utc(query.startDate).toDate();
@@ -165,7 +164,7 @@ export class PostsRepository {
         integration: {
           deletedAt: null,
           organizationId: orgId,
-          ...customerScopeWhere(query.customer, customerIds),
+          ...(scope || {}),
         },
         deletedAt: null,
         parentPostId: null,
@@ -223,7 +222,7 @@ export class PostsRepository {
   async getPostsList(
     orgId: string,
     query: GetPostsListDto,
-    customerIds?: string[] | null
+    scope?: any
   ) {
     const page = query.page || 0;
     const limit = query.limit || 20;
@@ -271,7 +270,7 @@ export class PostsRepository {
       integration: {
         deletedAt: null as any,
         organizationId: orgId,
-        ...customerScopeWhere(query.customer, customerIds),
+        ...(scope || {}),
       },
     };
 

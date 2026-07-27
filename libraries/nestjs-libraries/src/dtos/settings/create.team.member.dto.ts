@@ -20,10 +20,18 @@ export class CreateTeamMemberDto {
   @IsIn(['USER', 'ADMIN'])
   role: 'USER' | 'ADMIN';
 
-  /** Clients this member may work on. Empty means access to every client. */
+  /** Clients this member may work on (whole-brand shortcut). */
   @IsArray()
   @IsOptional()
   customerIds?: string[];
+
+  /**
+   * Individual channels this member may work on. Leaving BOTH this and
+   * customerIds empty grants access to everything in the workspace.
+   */
+  @IsArray()
+  @IsOptional()
+  integrationIds?: string[];
 }
 
 export class SetTeamMemberPasswordDto {

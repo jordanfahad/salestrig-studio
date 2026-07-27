@@ -12,7 +12,9 @@ export class OrganizationRepository {
     private _userOrg: PrismaRepository<'userOrganization'>,
     private _user: PrismaRepository<'user'>,
     private _customer: PrismaRepository<'customer'>,
-    private _userOrgCustomer: PrismaRepository<'userOrganizationCustomer'>
+    private _userOrgCustomer: PrismaRepository<'userOrganizationCustomer'>,
+    private _integration: PrismaRepository<'integration'>,
+    private _userOrgIntegration: PrismaRepository<'userOrganizationIntegration'>
   ) {}
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
@@ -190,6 +192,11 @@ export class OrganizationRepository {
                 customerId: true,
               },
             },
+            channels: {
+              select: {
+                integrationId: true,
+              },
+            },
           },
         },
         subscription: {
@@ -357,6 +364,17 @@ export class OrganizationRepository {
                 },
               },
             },
+            channels: {
+              select: {
+                integration: {
+                  select: {
+                    id: true,
+                    name: true,
+                    providerIdentifier: true,
+                  },
+                },
+              },
+            },
             user: {
               select: {
                 email: true,
@@ -384,7 +402,8 @@ export class OrganizationRepository {
     email: string,
     hashedPassword: string,
     role: 'USER' | 'ADMIN',
-    customerIds: string[]
+    customerIds: string[],
+    integrationIds: string[] = []
   ) {
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -424,6 +443,10 @@ export class OrganizationRepository {
       await this.setTeamMemberCustomers(orgId, membership.id, customerIds);
     }
 
+    if (integrationIds?.length) {
+      await this.setTeamMemberChannels(orgId, membership.id, integrationIds);
+    }
+
     return { id: membership.id, email: user.email };
   }
 
@@ -450,6 +473,48 @@ export class OrganizationRepository {
     });
 
     return { ok: true };
+  }
+
+  /**
+   * Replace a member's CHANNEL assignments. Empty list clears them.
+   * Every channel id is re-checked against this organization.
+   */
+  async setTeamMemberChannels(
+    orgId: string,
+    userOrganizationId: string,
+    integrationIds: string[]
+  ) {
+    const membership = await this._userOrg.model.userOrganization.findFirst({
+      where: { id: userOrganizationId, organizationId: orgId },
+    });
+
+    if (!membership) {
+      throw new Error('Member is not part of this organization');
+    }
+
+    const valid = integrationIds.length
+      ? await this._integration.model.integration.findMany({
+          where: { id: { in: integrationIds }, organizationId: orgId, deletedAt: null },
+          select: { id: true },
+        })
+      : [];
+
+    await this._userOrgIntegration.model.userOrganizationIntegration.deleteMany(
+      { where: { userOrganizationId } }
+    );
+
+    if (valid.length) {
+      await this._userOrgIntegration.model.userOrganizationIntegration.createMany(
+        {
+          data: valid.map((i: { id: string }) => ({
+            userOrganizationId,
+            integrationId: i.id,
+          })),
+        }
+      );
+    }
+
+    return { assigned: valid.length };
   }
 
   /**

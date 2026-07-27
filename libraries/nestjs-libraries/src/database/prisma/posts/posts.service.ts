@@ -328,28 +328,28 @@ export class PostsService {
   async getPosts(
     orgId: string,
     query: GetPostsDto,
-    customerIds?: string[] | null
+    scope?: any
   ) {
-    return this._postRepository.getPosts(orgId, query, customerIds);
+    return this._postRepository.getPosts(orgId, query, scope);
   }
 
   async getPostsMinified(
     orgId: string,
     query: GetPostsDto,
-    customerIds?: string[] | null
+    scope?: any
   ) {
     return minifyPosts({
-      posts: await this._postRepository.getPosts(orgId, query, customerIds),
+      posts: await this._postRepository.getPosts(orgId, query, scope),
     });
   }
 
   async getPostsList(
     orgId: string,
     query: GetPostsListDto,
-    customerIds?: string[] | null
+    scope?: any
   ) {
     return minifyPostsList(
-      await this._postRepository.getPostsList(orgId, query, customerIds)
+      await this._postRepository.getPostsList(orgId, query, scope)
     );
   }
 

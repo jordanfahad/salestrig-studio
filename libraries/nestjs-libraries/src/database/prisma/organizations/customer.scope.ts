@@ -21,6 +21,7 @@ export interface OrgWithScope {
     id?: string;
     role?: string;
     customers?: Array<{ customerId: string }>;
+    channels?: Array<{ integrationId: string }>;
   }>;
 }
 
@@ -30,6 +31,61 @@ export interface OrgWithScope {
  * must treat the two differently, because an empty array would legitimately
  * mean "can see nothing".
  */
+/** Channel ids ticked directly for this member, or null when unrestricted. */
+export function allowedIntegrationIds(org: OrgWithScope | any): string[] | null {
+  const assigned: string[] = (org?.users?.[0]?.channels || [])
+    .map((c: any) => c?.integrationId)
+    .filter(Boolean);
+
+  return assigned.length ? assigned : null;
+}
+
+/**
+ * True when the member has ANY assignment (channel or client). Members with
+ * none are unrestricted, which keeps the owner and every pre-existing member
+ * working exactly as before.
+ */
+export function hasChannelRestriction(org: OrgWithScope | any): boolean {
+  return (
+    allowedIntegrationIds(org) !== null || allowedCustomerIds(org) !== null
+  );
+}
+
+/**
+ * Prisma `where` fragment selecting only the channels a member may reach:
+ * ticked directly, or belonging to a client assigned to them. Yields `{}` for
+ * unrestricted members.
+ */
+export function channelScopeWhere(org: OrgWithScope | any) {
+  const channels = allowedIntegrationIds(org);
+  const customers = allowedCustomerIds(org);
+  if (!channels && !customers) {
+    return {};
+  }
+  const or: any[] = [];
+  if (channels) or.push({ id: { in: channels } });
+  if (customers) or.push({ customerId: { in: customers } });
+  return { OR: or };
+}
+
+/**
+ * Same restriction expressed for the `integration` relation inside post
+ * queries, combined with the client the caller asked to filter by.
+ */
+export function postScopeWhere(
+  org: OrgWithScope | any,
+  requestedCustomer?: string | null
+) {
+  const scope = channelScopeWhere(org);
+  if (!Object.keys(scope).length) {
+    return requestedCustomer ? { customerId: requestedCustomer } : {};
+  }
+  // A scoped member may still narrow by client, but never outside their set.
+  return requestedCustomer
+    ? { AND: [scope, { customerId: requestedCustomer }] }
+    : scope;
+}
+
 export function allowedCustomerIds(org: OrgWithScope | any): string[] | null {
   const assigned: string[] = (org?.users?.[0]?.customers || [])
     .map((c: any) => c?.customerId)

@@ -17,6 +17,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 const roles = [
   {
@@ -32,6 +33,20 @@ const roles = [
 interface Customer {
   id: string;
   name: string;
+}
+
+interface Channel {
+  id: string;
+  name: string;
+  identifier: string;
+  picture: string;
+  disabled: boolean;
+}
+
+interface MemberChannel {
+  id: string;
+  name: string;
+  providerIdentifier: string;
 }
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,7 +69,110 @@ interface TeamMember {
     id: string;
   };
   customers?: Customer[];
+  channels?: MemberChannel[];
 }
+
+const useChannels = () => {
+  const fetch = useFetch();
+  const load = useCallback(async () => {
+    const value = await (await fetch('/integrations/list')).json();
+    return (value?.integrations || []) as Channel[];
+  }, []);
+
+  return useSWR('settings-team-channels', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+};
+
+export const ChannelPicker: FC<{
+  channels: Channel[];
+  isLoading: boolean;
+  selected: string[];
+  toggle: (id: string) => () => void;
+  className?: string;
+}> = (props) => {
+  const { channels, isLoading, selected, toggle, className } = props;
+  const t = useT();
+
+  if (isLoading) {
+    return <div className="text-customColor18">{t('loading', 'Loading...')}</div>;
+  }
+
+  if (!channels.length) {
+    return (
+      <div className="text-customColor18">
+        {t(
+          'no_channels_yet_in_this_workspace',
+          'There are no channels in this workspace yet. Connect a channel first.'
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col gap-[12px] overflow-y-auto ${className || ''}`}>
+      {channels.map((channel) => (
+        <div
+          key={channel.id}
+          className={`flex gap-[8px] items-center cursor-pointer ${
+            channel.disabled ? 'opacity-50' : ''
+          }`}
+          onClick={toggle(channel.id)}
+        >
+          <div>
+            <Checkbox
+              disableForm={true}
+              checked={selected.includes(channel.id)}
+              variant="hollow"
+            />
+          </div>
+          <ImageWithFallback
+            src={channel.picture || `/icons/platforms/${channel.identifier}.png`}
+            fallbackSrc={`/icons/platforms/${channel.identifier}.png`}
+            alt={channel.identifier}
+            width={24}
+            height={24}
+            className="rounded-full w-[24px] h-[24px] min-w-[24px] object-cover"
+          />
+          <div className="flex-1 min-w-0 break-words">{channel.name}</div>
+          <div className="text-customColor18 text-[12px] shrink-0">
+            {capitalize(channel.identifier)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const ChannelAccessHint: FC<{
+  count: number;
+}> = (props) => {
+  const { count } = props;
+  const t = useT();
+
+  return (
+    <div className="text-[14px]">
+      {!count
+        ? t(
+            'this_member_will_have_access_to_all_channels',
+            'This member will have access to all channels.'
+          )
+        : count === 1
+        ? t(
+            'this_member_will_only_have_access_to_the_selected_channel',
+            'This member will only have access to the 1 selected channel.'
+          )
+        : t(
+            'this_member_will_only_have_access_to_the_selected_channels',
+            'This member will only have access to the {{amount}} selected channels.',
+            {
+              amount: count,
+            }
+          )}
+    </div>
+  );
+};
 export const AddMember = () => {
   const modals = useModals();
   const fetch = useFetch();
@@ -142,18 +260,10 @@ export const ManageAccess: FC<{
   const toast = useToaster();
   const t = useT();
   const [selected, setSelected] = useState<string[]>(
-    (member.customers || []).map((customer) => customer.id)
+    (member.channels || []).map((channel) => channel.id)
   );
   const [saving, setSaving] = useState(false);
-  const loadCustomers = useCallback(async () => {
-    return (await (
-      await fetch('/integrations/customers')
-    ).json()) as Customer[];
-  }, []);
-  const { data, isLoading } = useSWR('/api/customers', loadCustomers, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  const { data, isLoading } = useChannels();
   const toggle = useCallback(
     (id: string) => () => {
       setSelected((current) =>
@@ -166,66 +276,44 @@ export const ManageAccess: FC<{
   );
   const save = useCallback(async () => {
     setSaving(true);
-    await fetch(`/settings/team/${member.id}/customers`, {
+    const response = await fetch(`/settings/team/${member.id}/channels`, {
       method: 'POST',
       body: JSON.stringify({
-        customerIds: selected,
+        integrationIds: selected,
       }),
     });
+    if (!response.ok) {
+      setSaving(false);
+      const message = await readErrorMessage(response);
+      toast.show(
+        message ||
+          t('could_not_update_channel_access', 'Could not update channel access'),
+        'warning'
+      );
+      return;
+    }
     await reload();
     setSaving(false);
     modals.closeAll();
-    toast.show(t('client_access_updated', 'Client access updated'));
+    toast.show(t('channel_access_updated', 'Channel access updated'));
   }, [member.id, selected, reload, t]);
 
   return (
     <div className="relative flex flex-col gap-[16px] w-full max-w-full p-[16px] pt-0">
       <div className="text-customColor18 text-[14px]">
         {t(
-          'pick_the_clients_this_member_can_work_on',
-          'Pick the clients this member can work on. If you leave everything unchecked, the member can access ALL clients.'
+          'pick_the_channels_this_member_can_work_on',
+          'Pick the channels this member can work on. If you leave everything unchecked, the member can access EVERY channel in this workspace.'
         )}
       </div>
-      {isLoading ? (
-        <div className="text-customColor18">{t('loading', 'Loading...')}</div>
-      ) : !(data || []).length ? (
-        <div className="text-customColor18">
-          {t(
-            'no_clients_yet_in_this_workspace',
-            'There are no clients yet in this workspace. Assign a client to a channel first.'
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-[12px] max-h-[320px] overflow-y-auto">
-          {(data || []).map((customer) => (
-            <div
-              key={customer.id}
-              className="flex gap-[8px] items-center cursor-pointer"
-              onClick={toggle(customer.id)}
-            >
-              <div>
-                <Checkbox
-                  disableForm={true}
-                  checked={selected.includes(customer.id)}
-                  variant="hollow"
-                />
-              </div>
-              <div className="break-words">{customer.name}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div>
-        {!selected.length
-          ? t(
-              'this_member_will_have_access_to_all_clients',
-              'This member will have access to all clients.'
-            )
-          : t(
-              'this_member_will_only_have_access_to_the_selected_clients',
-              'This member will only have access to the selected clients.'
-            )}
-      </div>
+      <ChannelPicker
+        channels={data || []}
+        isLoading={isLoading}
+        selected={selected}
+        toggle={toggle}
+        className="max-h-[320px]"
+      />
+      <ChannelAccessHint count={selected.length} />
       <div>
         <Button onClick={save} loading={saving}>
           {t('save_access', 'Save access')}
@@ -249,15 +337,7 @@ export const CreateMember: FC<{
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [saving, setSaving] = useState(false);
-  const loadCustomers = useCallback(async () => {
-    return (await (
-      await fetch('/integrations/customers')
-    ).json()) as Customer[];
-  }, []);
-  const { data, isLoading } = useSWR('/api/customers', loadCustomers, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  const { data, isLoading } = useChannels();
   const toggle = useCallback(
     (id: string) => () => {
       setSelected((current) =>
@@ -306,7 +386,7 @@ export const CreateMember: FC<{
         email: cleanEmail,
         password,
         role,
-        customerIds: selected,
+        integrationIds: selected,
       }),
     });
     if (!response.ok) {
@@ -378,50 +458,18 @@ export const CreateMember: FC<{
       </Select>
       <div className="text-customColor18 text-[14px]">
         {t(
-          'pick_the_clients_this_member_can_work_on',
-          'Pick the clients this member can work on. If you leave everything unchecked, the member can access ALL clients.'
+          'pick_the_channels_this_member_can_work_on',
+          'Pick the channels this member can work on. If you leave everything unchecked, the member can access EVERY channel in this workspace.'
         )}
       </div>
-      {isLoading ? (
-        <div className="text-customColor18">{t('loading', 'Loading...')}</div>
-      ) : !(data || []).length ? (
-        <div className="text-customColor18">
-          {t(
-            'no_clients_yet_in_this_workspace',
-            'There are no clients yet in this workspace. Assign a client to a channel first.'
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-[12px] max-h-[240px] overflow-y-auto">
-          {(data || []).map((customer) => (
-            <div
-              key={customer.id}
-              className="flex gap-[8px] items-center cursor-pointer"
-              onClick={toggle(customer.id)}
-            >
-              <div>
-                <Checkbox
-                  disableForm={true}
-                  checked={selected.includes(customer.id)}
-                  variant="hollow"
-                />
-              </div>
-              <div className="break-words">{customer.name}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div>
-        {!selected.length
-          ? t(
-              'this_member_will_have_access_to_all_clients',
-              'This member will have access to all clients.'
-            )
-          : t(
-              'this_member_will_only_have_access_to_the_selected_clients',
-              'This member will only have access to the selected clients.'
-            )}
-      </div>
+      <ChannelPicker
+        channels={data || []}
+        isLoading={isLoading}
+        selected={selected}
+        toggle={toggle}
+        className="max-h-[240px]"
+      />
+      <ChannelAccessHint count={selected.length} />
       <div>
         <Button onClick={save} loading={saving}>
           {t('create_login', 'Create login')}
@@ -571,7 +619,7 @@ export const TeamsComponent = () => {
         classNames: {
           modal: 'bg-transparent text-textColor',
         },
-        title: t('top_title_manage_access', 'Manage client access'),
+        title: t('top_title_manage_access', 'Manage channel access'),
         withCloseButton: true,
         children: <ManageAccess member={member} reload={mutate} />,
       });
@@ -629,17 +677,17 @@ export const TeamsComponent = () => {
                   : t('super_admin', 'Super Admin')}
               </div>
               <div className="flex-1 min-w-[120px] flex flex-wrap gap-[4px]">
-                {p.role === 'SUPERADMIN' || !p.customers?.length ? (
+                {p.role === 'SUPERADMIN' || !p.channels?.length ? (
                   <div className="text-customColor18 text-[12px]">
-                    {t('all_clients', 'All clients')}
+                    {t('all_channels', 'All channels')}
                   </div>
                 ) : (
-                  p.customers.map((customer) => (
+                  p.channels.map((channel) => (
                     <div
-                      key={customer.id}
+                      key={channel.id}
                       className="bg-customColor3 border border-customColor21 rounded-[4px] px-[8px] py-[2px] text-[12px] break-words"
                     >
-                      {customer.name}
+                      {channel.name}
                     </div>
                   ))
                 )}
