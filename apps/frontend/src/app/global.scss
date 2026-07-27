@@ -816,3 +816,22 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+/* Salestrig mobile: modals must never exceed the phone viewport. The modal
+   system sets width via INLINE style (modal.size), so stylesheet !important
+   is the only clean override. Also relax the 6-across media-library grid. */
+@media (max-width: 1025px) {
+  .modal-panel {
+    min-width: 0 !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+  .modal-size-wrap {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  .w8-max {
+    width: calc(100% / 3) !important;
+    max-width: calc(100% / 3) !important;
+  }
+}

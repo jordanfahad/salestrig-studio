@@ -439,6 +439,7 @@ export const MediaBox: FC<{
             ref={uploaderRef}
             onChange={addToUpload}
             className="hidden"
+            accept="image/*,video/mp4,video/quicktime"
             multiple={true}
           />
           <div className="flex gap-[8px]">
@@ -824,7 +825,7 @@ export const MultiMediaComponent: FC<{
                             ),
                           });
                         }}
-                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
+                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 mobile:opacity-100 transition-opacity z-[9]"
                       >
                         <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                       </div>

@@ -175,7 +175,8 @@ export const PlatformAnalytics = () => {
       <div
         className={clsx(
           'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]',
+          'mobile:w-full mobile:shrink-0 mobile:p-[12px]'
         )}
       >
         <div className="flex gap-[12px] flex-col">
@@ -224,7 +225,7 @@ export const PlatformAnalytics = () => {
               className={clsx(
                 'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px]',
                 currentIntegration.id !== integration.id &&
-                  'opacity-20 hover:opacity-100 cursor-pointer'
+                  'opacity-20 mobile:opacity-60 hover:opacity-100 cursor-pointer'
               )}
             >
               <div
@@ -272,7 +273,7 @@ export const PlatformAnalytics = () => {
           ))}
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px] mobile:p-[12px]">
         {!!options.length && (
           <div className="flex-1 flex flex-col gap-[14px]">
             <div className="max-w-[200px]">

@@ -294,6 +294,27 @@ export const CalendarWeekProvider: FC<{
     []
   );
 
+  // Phones default to the list view (the week grid is unusable at 375px).
+  // Runs once after mount, and only when the user has never expressed a
+  // choice (no ?display= param and no saved cookie) - an explicit pick of
+  // week/month on mobile is respected forever after.
+  useEffect(() => {
+    const hasExplicitChoice =
+      !!searchParams.get('display') ||
+      document.cookie.includes('calendar-display=');
+    const isPhone = window.matchMedia('(max-width: 1025px)').matches;
+    if (!hasExplicitChoice && isPhone) {
+      const range = getDateRange('list');
+      setFiltersWrapper({
+        startDate: range.startDate,
+        endDate: range.endDate,
+        display: 'list',
+        customer: initCustomer || null,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const posts = useMemo(() => calendarData?.posts || [], [calendarData?.posts]);
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 

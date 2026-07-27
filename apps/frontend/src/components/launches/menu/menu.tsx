@@ -89,6 +89,19 @@ export const Menu: FC<{
           setShow((prev) => (prev ? { ...prev, y: newY } : false));
         }
       }
+
+      // Same clamp horizontally - on phones the menu otherwise opens past the
+      // right edge of the viewport.
+      const viewportWidth = window.innerWidth;
+      if (menuRect.right > viewportWidth - padding) {
+        const newX = Math.max(
+          padding,
+          viewportWidth - menuRect.width - padding
+        );
+        if (Math.abs(show.x - newX) > 1) {
+          setShow((prev) => (prev ? { ...prev, x: newX } : false));
+        }
+      }
     }
   }, [show]);
   const findIntegration: any = useMemo(() => {

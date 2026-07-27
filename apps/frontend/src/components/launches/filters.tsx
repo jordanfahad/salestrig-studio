@@ -311,7 +311,7 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="min-w-[200px] mobile:min-w-0 mobile:flex-1 text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
                 {getDisplayText()}
               </div>
@@ -377,7 +377,7 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="min-w-[200px] mobile:min-w-0 mobile:flex-1 text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
@@ -414,7 +414,7 @@ export const Filters = () => {
                 key={option.value}
                 onClick={setListStateFilter(option.value)}
                 className={clsx(
-                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-[6px]',
+                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] mobile:min-w-0 px-[12px] mobile:px-[8px] text-center rounded-[6px]',
                   calendar.listState === option.value &&
                     'text-textItemFocused bg-boxFocused'
                 )}
@@ -435,7 +435,7 @@ export const Filters = () => {
         <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+              'pt-[6px] pb-[5px] cursor-pointer w-[74px] mobile:w-auto mobile:px-[10px] text-center rounded-[6px]',
               calendar.display === 'day' && 'text-textItemFocused bg-boxFocused'
             )}
             onClick={setDay}
@@ -444,7 +444,7 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+              'pt-[6px] pb-[5px] cursor-pointer w-[74px] mobile:w-auto mobile:px-[10px] text-center rounded-[6px]',
               calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
             )}
             onClick={setWeek}
@@ -453,7 +453,7 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+              'pt-[6px] pb-[5px] cursor-pointer w-[74px] mobile:w-auto mobile:px-[10px] text-center rounded-[6px]',
               calendar.display === 'month' && 'text-textItemFocused bg-boxFocused'
             )}
             onClick={setMonth}

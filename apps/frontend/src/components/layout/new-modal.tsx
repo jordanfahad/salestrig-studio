@@ -151,6 +151,7 @@ export const Component: FC<{
           >
             <div
               className={clsx(
+                'modal-size-wrap',
                 modal.fullScreen ? 'w-full h-full flex-1' : 'mx-auto py-[48px]'
               )}
               {...(modal.size && { style: { width: modal.size } })}
@@ -196,8 +197,8 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
+                !modal.removeLayout && 'gap-[40px] p-[32px] mobile:gap-[16px] mobile:p-[16px]',
+                'modal-panel bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
                 modal.size ? '' : 'min-w-[600px]',
                 modal.fullScreen && 'h-full'
               )}

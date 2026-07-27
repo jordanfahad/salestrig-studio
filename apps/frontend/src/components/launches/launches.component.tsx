@@ -500,12 +500,16 @@ export const LaunchesComponent = () => {
         <div
           className={clsx(
             'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]',
+            // Phones: the channels panel becomes a full-width block stacked
+            // above the calendar (parent stacks via mobile:flex-col).
+            'mobile:w-full mobile:h-auto mobile:shrink-0'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor',
+              'mobile:static mobile:h-auto mobile:max-h-[44vh] mobile:p-[12px]'
             )}
           >
             <div className="flex items-center">
@@ -592,7 +596,7 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px] mobile:p-[10px]">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />

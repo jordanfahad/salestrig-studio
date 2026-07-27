@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -52,6 +52,10 @@ const jakartaSans = Plus_Jakarta_Sans({
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
+  // Mobile slide-over menu (the fixed left rail is hidden under the `mobile:`
+  // breakpoint; this drawer re-renders the same Logo + TopMenu).
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
 
   // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
@@ -90,7 +94,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <ContinueProvider />
             <div
               className={clsx(
-                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
+                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px] mobile:p-[4px]',
                 jakartaSans.className
               )}
             >
@@ -100,9 +104,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               ) : (
                 <>
                   <AnnouncementBanner />
-                  <div className="flex-1 flex gap-[8px]">
+                  <div className="flex-1 flex gap-[8px] mobile:gap-0">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px] mobile:hidden">
                       <div
                         id="left-menu"
                         className={clsx(
@@ -116,27 +120,76 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         </div>
                       </div>
                     </div>
+                    {mobileMenuOpen && (
+                      <div
+                        className="hidden mobile:block fixed inset-0 z-[300]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <div className="absolute inset-0 bg-black/60" />
+                        <div
+                          className="absolute inset-y-0 start-0 w-[248px] bg-newBgColorInner p-[12px] overflow-y-auto"
+                          onClick={(e) => e.stopPropagation()}
+                          onClickCapture={(e) => {
+                            // Navigating from the drawer should also close it.
+                            if ((e.target as HTMLElement).closest('a')) {
+                              setMobileMenuOpen(false);
+                            }
+                          }}
+                        >
+                          <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
+                            <Logo />
+                            <TopMenu />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                        <div className="text-[24px] font-[600] flex flex-1">
+                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center mobile:px-[12px]">
+                        <button
+                          type="button"
+                          aria-label="Open menu"
+                          onClick={() => setMobileMenuOpen(true)}
+                          className="hidden mobile:flex items-center justify-center w-[40px] h-[40px] me-[10px] rounded-[8px] bg-newBgColor text-newTextColor shrink-0"
+                        >
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          >
+                            <path d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                        </button>
+                        <div className="text-[24px] font-[600] flex flex-1 mobile:text-[18px] min-w-0">
                           <Title />
                         </div>
-                        <div className="flex gap-[20px] text-textItemBlur">
-                          <StreakComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                        <div className="flex gap-[20px] text-textItemBlur mobile:gap-[12px] shrink-0">
+                          <div className="mobile:hidden">
+                            <StreakComponent />
+                          </div>
+                          <div className="w-[1px] h-[20px] bg-blockSeparator mobile:hidden" />
                           <OrganizationSelector />
                           <div className="hover:text-newTextColor">
                             <ModeComponent />
                           </div>
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <LanguageComponent />
-                          <ChromeExtensionComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <AttachToFeedbackIcon />
+                          <div className="w-[1px] h-[20px] bg-blockSeparator mobile:hidden" />
+                          <div className="mobile:hidden">
+                            <LanguageComponent />
+                          </div>
+                          <div className="mobile:hidden">
+                            <ChromeExtensionComponent />
+                          </div>
+                          <div className="w-[1px] h-[20px] bg-blockSeparator mobile:hidden" />
+                          <div className="mobile:hidden">
+                            <AttachToFeedbackIcon />
+                          </div>
                           <NotificationComponent />
                         </div>
                       </div>
-                      <div className="flex flex-1 gap-[1px]">{children}</div>
+                      <div className="flex flex-1 gap-[1px] mobile:flex-col">{children}</div>
                     </div>
                   </div>
                 </>
