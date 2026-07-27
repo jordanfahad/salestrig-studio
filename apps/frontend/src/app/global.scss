@@ -920,3 +920,21 @@ html[dir='rtl'] [dir='ltr'] {
     right: 10px !important;
   }
 }
+
+/* Salestrig mobile safety net: nothing may create sideways dead space.
+   `clip` rather than `hidden` on purpose - hidden turns the element into a
+   scroll container and breaks position:sticky descendants, clip does not. */
+@media (max-width: 1025px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  /* The week/month grid scrolls internally; keep it inside the card so a wide
+     cell scrolls the grid rather than smearing the whole page sideways. */
+  .calendar-scroll-guard {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

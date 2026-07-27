@@ -366,7 +366,7 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] mobile:[grid-template-columns:44px_repeat(7,_minmax(0,_1fr))] gap-[4px] mobile:gap-[2px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
           <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
@@ -1020,6 +1020,11 @@ const CalendarItem: FC<{
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
+  // Touch devices have no hover, so the action icons must be visible - but only
+  // in the full-width views. In week/month the cells are a few dozen px wide and
+  // a row of always-on icons blows the grid out horizontally (dead space when
+  // you swipe sideways). ListView renders with display="day".
+  const touchActions = display === 'day' ? 'mobile:block' : '';
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -1066,7 +1071,7 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary overflow-hidden min-w-0'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -1075,7 +1080,7 @@ const CalendarItem: FC<{
         <div
           className={clsx(
             post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
-            'group-hover:hidden cursor-pointer'
+            'group-hover:hidden cursor-pointer min-w-0 truncate'
           )}
         >
           {post.tags.map((p) => p.tag.name).join(', ')}
@@ -1083,7 +1088,8 @@ const CalendarItem: FC<{
         {copyDebugJson && (
           <div
             className={clsx(
-              'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+              'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
               post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
             )}
             onClick={copyDebugJson}
@@ -1093,7 +1099,8 @@ const CalendarItem: FC<{
         )}
         <div
           className={clsx(
-            'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+            'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
             post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
           )}
           onClick={duplicatePost}
@@ -1102,7 +1109,8 @@ const CalendarItem: FC<{
         </div>
         <div
           className={clsx(
-            'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+            'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
             post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
           )}
           onClick={preview}
@@ -1114,7 +1122,8 @@ const CalendarItem: FC<{
         ) : post.releaseId === 'missing' && missingRelease ? (
           <div
             className={clsx(
-              'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+              'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
               post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
             )}
             onClick={missingRelease}
@@ -1124,7 +1133,8 @@ const CalendarItem: FC<{
         ) : post.releaseId !== 'missing' ? (
           <div
             className={clsx(
-              'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+              'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
               post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
             )}
             onClick={statistics}
@@ -1136,7 +1146,8 @@ const CalendarItem: FC<{
         )}{' '}
         <div
           className={clsx(
-            'hidden group-hover:block mobile:block hover:underline cursor-pointer',
+            'hidden group-hover:block hover:underline cursor-pointer',
+            touchActions,
             post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
           )}
           onClick={deletePost}

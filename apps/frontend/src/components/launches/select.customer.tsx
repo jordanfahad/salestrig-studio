@@ -72,7 +72,7 @@ export const SelectCustomer: FC<{
       {open && (
         <div
           style={pos}
-          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px]"
+          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px] mobile:!left-[8px] mobile:!min-w-0 mobile:!w-[calc(100vw-16px)]"
         >
           <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
             {t('customers', 'Customers')}

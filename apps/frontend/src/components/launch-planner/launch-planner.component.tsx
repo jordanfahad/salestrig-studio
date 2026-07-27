@@ -129,7 +129,7 @@ export const LaunchPlannerComponent: FC = () => {
                 </div>
               </div>
               <div className="font-[600]">{p.title}</div>
-              <div className="whitespace-pre-wrap text-[14px] text-customColor18">
+              <div className="whitespace-pre-wrap break-words text-[14px] text-customColor18">
                 {p.content}
               </div>
             </div>

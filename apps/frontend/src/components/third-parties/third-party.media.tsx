@@ -95,7 +95,7 @@ export const ThirdPartyPopup: FC<{
   return (
     <div className={clsx('flex flex-wrap flex-col gap-[10px] pt-[20px]')}>
       {!thirdParty && (
-        <div className="grid grid-cols-4 gap-[10px] justify-items-center justify-center">
+        <div className="grid grid-cols-4 mobile:!grid-cols-2 gap-[10px] justify-items-center justify-center">
           {thirdParties.map((p: any) => (
             <div
               onClick={() => {

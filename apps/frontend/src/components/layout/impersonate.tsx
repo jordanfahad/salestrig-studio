@@ -112,7 +112,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-[16px] min-w-[500px]">
+    <div className="flex flex-col gap-[16px] min-w-[500px] mobile:!min-w-0 mobile:w-full">
       <div className="max-h-[400px] overflow-y-auto">
         {!charges?.length ? (
           <div className="text-center py-[20px] text-newTextColor/60">
@@ -335,7 +335,7 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
   }, [title, description, color]);
 
   return (
-    <div className="flex flex-col gap-[16px] min-w-[500px]">
+    <div className="flex flex-col gap-[16px] min-w-[500px] mobile:!min-w-0 mobile:w-full">
       <Input
         label={t('announcement_title', 'Title')}
         name="title"
@@ -523,8 +523,8 @@ export const Impersonate = () => {
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
-        <div className="relative flex flex-col w-[600px]">
+      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white mobile:h-auto mobile:flex-wrap mobile:gap-[8px] mobile:py-[8px] mobile:px-[8px]">
+        <div className="relative flex flex-col w-[600px] mobile:!w-full mobile:max-w-full">
           <div className="relative z-[1]">
             {user?.impersonate ? (
               <div className="text-center flex justify-center items-center gap-[20px]">

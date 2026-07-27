@@ -89,7 +89,7 @@ export const Autopost: FC = () => {
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
                   <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
+                  <div className="flex flex-col justify-center break-all min-w-0">{p.url}</div>
                   <div className="flex flex-col justify-center">
                     <div>
                       <Button onClick={addWebhook(p)}>

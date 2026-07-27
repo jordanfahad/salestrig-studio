@@ -263,7 +263,7 @@ export const Plug = () => {
     return null;
   }
   return (
-    <div className="grid grid-cols-3 gap-[30px]">
+    <div className="grid grid-cols-3 mobile:!grid-cols-1 gap-[30px] mobile:gap-[12px]">
       {plug.plugs.map((p) => (
         <PlugItem
           key={p.title + '-' + plug.providerId}

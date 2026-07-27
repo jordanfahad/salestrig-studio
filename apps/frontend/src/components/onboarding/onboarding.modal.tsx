@@ -20,7 +20,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
   const t = useT();
 
   return (
-    <div className="w-full min-h-full flex-1 p-[40px] flex relative">
+    <div className="w-full min-h-full flex-1 p-[40px] mobile:!p-[12px] flex relative">
       <style>
         {`#support-discord {display: none}`}
       </style>
@@ -45,7 +45,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
             ></path>
           </svg>
         </button>
-        <div className="flex-1 flex p-[40px]">
+        <div className="flex-1 flex p-[40px] mobile:!p-[16px]">
           <div className="flex flex-col gap-[24px] flex-1">
             {/* Step indicators */}
             <div className="flex items-center justify-center gap-[16px]">
