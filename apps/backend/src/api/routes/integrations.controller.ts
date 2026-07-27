@@ -226,6 +226,19 @@ export class IntegrationsController {
       const { codeVerifier, state, url } =
         await integrationProvider.generateAuthUrl(getExternalUrl);
 
+      // A provider whose app credentials are not configured on this server
+      // still renders a tile in "Add Channel", and silently produces an auth
+      // URL with client_id=undefined - the user lands on the platform's
+      // "page isn't available" screen with no idea why. Fail loudly instead.
+      if (/client_id=(undefined|null|&|$)/.test(url) || /client_key=(undefined|null|&|$)/.test(url)) {
+        throw new Error(
+          `${integrationProvider.name.replace(
+            /\s+/g,
+            ' '
+          )} is not configured on this server (missing app credentials). Please contact your administrator.`
+        );
+      }
+
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 3600);
       }
