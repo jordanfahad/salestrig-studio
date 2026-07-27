@@ -342,6 +342,28 @@ export class PostsRepository {
     });
   }
 
+  /**
+   * How many posts a given id-or-group matches, optionally narrowed to the
+   * channels a scoped member may reach. Comparing the two counts is how the
+   * post routes decide whether the caller is allowed to touch it at all.
+   */
+  countPostsForIdOrGroup(
+    orgId: string,
+    idOrGroup: string,
+    integrationScope?: any
+  ) {
+    return this._post.model.post.count({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        OR: [{ id: idOrGroup }, { group: idOrGroup }],
+        ...(integrationScope && Object.keys(integrationScope).length
+          ? { integration: integrationScope }
+          : {}),
+      },
+    });
+  }
+
   getPostsByGroup(orgId: string, group: string) {
     return this._post.model.post.findMany({
       where: {

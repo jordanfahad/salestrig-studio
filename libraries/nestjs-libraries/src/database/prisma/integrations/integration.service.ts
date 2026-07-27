@@ -155,9 +155,10 @@ export class IntegrationService {
   }
 
   /**
-   * Throws when a scoped member touches a channel outside their clients.
-   * Used by every channel mutation route - these had no authorization at all,
-   * so any member could disable or permanently delete any channel.
+   * Throws when a scoped member touches a channel they were not given.
+   * Used by every route that names a channel - these had no authorization at
+   * all, so any member could read, rename, disable or permanently delete any
+   * channel in the workspace.
    */
   async assertChannelInScope(org: any, integrationId: string) {
     if (!hasChannelRestriction(org)) {
@@ -174,6 +175,34 @@ export class IntegrationService {
     );
     if (!integration?.customerId || !customers.includes(integration.customerId)) {
       throw new HttpForbiddenException();
+    }
+  }
+
+  /** A plug is reachable only through the channel it automates. */
+  async assertPlugInScope(org: any, plugId: string) {
+    if (!hasChannelRestriction(org)) {
+      return;
+    }
+    const plug = await this._integrationRepository.getPlugIntegrationId(
+      org.id,
+      plugId
+    );
+    if (!plug?.integrationId) {
+      throw new HttpForbiddenException();
+    }
+    await this.assertChannelInScope(org, plug.integrationId);
+  }
+
+  /**
+   * Same check for a whole list - a post can target several channels at once
+   * and every one of them has to be allowed, not just the first.
+   */
+  async assertChannelsInScope(org: any, integrationIds: string[]) {
+    if (!hasChannelRestriction(org)) {
+      return;
+    }
+    for (const id of [...new Set((integrationIds || []).filter(Boolean))]) {
+      await this.assertChannelInScope(org, id);
     }
   }
 

@@ -619,6 +619,19 @@ export class IntegrationRepository {
     });
   }
 
+  /** Which channel a plug hangs off, so its routes can be scope-checked. */
+  getPlugIntegrationId(orgId: string, plugId: string) {
+    return this._plugs.model.plugs.findFirst({
+      where: {
+        organizationId: orgId,
+        id: plugId,
+      },
+      select: {
+        integrationId: true,
+      },
+    });
+  }
+
   changePlugActivation(orgId: string, plugId: string, status: boolean) {
     return this._plugs.model.plugs.update({
       where: {

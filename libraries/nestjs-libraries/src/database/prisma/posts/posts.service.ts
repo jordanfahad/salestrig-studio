@@ -43,6 +43,11 @@ import {
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { AnalyticsData } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import {
+  channelScopeWhere,
+  hasChannelRestriction,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -497,6 +502,33 @@ export class PostsService {
         exportedAt: new Date().toISOString(),
       },
     };
+  }
+
+  /**
+   * Guards every route that names a post by id or group. A member restricted
+   * to a set of channels may only touch posts whose channels are ALL inside
+   * that set - otherwise knowing an id would be enough to read or delete a
+   * colleague's post.
+   */
+  async assertPostInScope(org: any, idOrGroup: string) {
+    if (!hasChannelRestriction(org)) {
+      return;
+    }
+    const total = await this._postRepository.countPostsForIdOrGroup(
+      org.id,
+      idOrGroup
+    );
+    if (!total) {
+      return;
+    }
+    const visible = await this._postRepository.countPostsForIdOrGroup(
+      org.id,
+      idOrGroup,
+      channelScopeWhere(org)
+    );
+    if (visible !== total) {
+      throw new HttpForbiddenException();
+    }
   }
 
   async getPostsByGroup(orgId: string, group: string) {
@@ -1012,9 +1044,15 @@ export class PostsService {
     return newDate;
   }
 
-  async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
+  async generatePostsDraft(
+    orgId: string,
+    body: CreateGeneratedPostsDto,
+    scope?: any
+  ) {
+    // Fans out to every channel, so a scoped member must only ever reach
+    // their own - otherwise a single click drafts onto the whole workspace.
     const getAllIntegrations = (
-      await this._integrationService.getIntegrationsList(orgId)
+      await this._integrationService.getIntegrationsList(orgId, scope)
     ).filter((f) => !f.disabled && f.providerIdentifier !== 'reddit');
 
     // const posts = chunk(body.posts, getAllIntegrations.length);

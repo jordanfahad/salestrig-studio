@@ -70,6 +70,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: { group: string }
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.updateIntegrationGroup(
       org.id,
       id,
@@ -83,6 +84,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: { name: string }
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.updateOnCustomerName(org.id, id, body.name);
   }
 
@@ -137,6 +139,7 @@ export class IntegrationsController {
       throw new Error('Invalid body');
     }
 
+    await this._integrationService.assertChannelInScope(org, id);
     await this._integrationService.updateProviderSettings(org.id, id, body);
   }
   @Post('/:id/nickname')
@@ -145,6 +148,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: { name: string; picture: string }
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     const integration = await this._integrationService.getIntegrationById(
       org.id,
       id
@@ -180,12 +184,13 @@ export class IntegrationsController {
   }
 
   @Get('/:id')
-  getSingleIntegration(
+  async getSingleIntegration(
     @Param('id') id: string,
     @Query('order') order: string,
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.getIntegrationForOrder(
       id,
       order,
@@ -276,6 +281,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: IntegrationTimeDto
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.setTimes(org.id, id, body);
   }
 
@@ -284,6 +290,7 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: IntegrationFunctionDto
   ) {
+    await this._integrationService.assertChannelInScope(org, body.id);
     const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
       body.id
@@ -340,6 +347,7 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: IntegrationFunctionDto
   ): Promise<any> {
+    await this._integrationService.assertChannelInScope(org, body.id);
     const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
       body.id
@@ -447,6 +455,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @GetOrgFromRequest() org: Organization
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.getPlugsByIntegrationId(org.id, id);
   }
 
@@ -456,6 +465,7 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: PlugDto
   ) {
+    await this._integrationService.assertChannelInScope(org, id);
     return this._integrationService.createOrUpdatePlug(org.id, id, body);
   }
 
@@ -465,6 +475,7 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body('status') status: boolean
   ) {
+    await this._integrationService.assertPlugInScope(org, id);
     return this._integrationService.changePlugActivation(org.id, id, status);
   }
 

@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { postScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
+import {
+  channelScopeWhere,
+  postScopeWhere,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
@@ -30,6 +33,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -37,7 +41,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _integrationService: IntegrationService
   ) {}
 
   @Get('/:id/statistics')
@@ -45,6 +50,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string
   ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.getStatistics(org.id, id);
   }
 
@@ -53,6 +59,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string
   ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.getMissingContent(org.id, id);
   }
 
@@ -62,6 +69,7 @@ export class PostsController {
     @Param('id') id: string,
     @Body('releaseId') releaseId: string
   ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.updateReleaseId(org.id, id, releaseId);
   }
 
@@ -77,6 +85,7 @@ export class PostsController {
     @Param('id') id: string,
     @Body() body: { comment: string }
   ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.createComment(org.id, user.id, id, body.comment);
   }
 
@@ -168,12 +177,20 @@ export class PostsController {
   }
 
   @Get('/group/:group')
-  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+  async getPostsByGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('group') group: string
+  ) {
+    await this._postsService.assertPostInScope(org, group);
     return this._postsService.getPostsByGroup(org.id, group);
   }
 
   @Get('/:id')
-  getPost(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+  async getPost(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.getPost(org.id, id);
   }
 
@@ -182,6 +199,10 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
+    await this._integrationService.assertChannelsInScope(
+      org,
+      (rawBody?.posts || []).map((p: any) => p?.integration?.id)
+    );
     return this._postsService.validatePosts(org.id, rawBody?.posts || []);
   }
 
@@ -191,6 +212,13 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
+    // A member restricted to a set of channels must not be able to publish to
+    // any other channel just by naming its id in the payload.
+    await this._integrationService.assertChannelsInScope(
+      org,
+      (rawBody?.posts || []).map((p: any) => p?.integration?.id)
+    );
+
     // Server-side validation — never trust the client to have validated.
     const validation = await this._postsService.validatePosts(
       org.id,
@@ -238,7 +266,11 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: CreateGeneratedPostsDto
   ) {
-    return this._postsService.generatePostsDraft(org.id, body);
+    return this._postsService.generatePostsDraft(
+      org.id,
+      body,
+      channelScopeWhere(org)
+    );
   }
 
   @Post('/generator')
@@ -257,20 +289,22 @@ export class PostsController {
   }
 
   @Delete('/:group')
-  deletePost(
+  async deletePost(
     @GetOrgFromRequest() org: Organization,
     @Param('group') group: string
   ) {
+    await this._postsService.assertPostInScope(org, group);
     return this._postsService.deletePost(org.id, group);
   }
 
   @Put('/:id/date')
-  changeDate(
+  async changeDate(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
     @Body('date') date: string,
     @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
+    await this._postsService.assertPostInScope(org, id);
     return this._postsService.changeDate(org.id, id, date, action);
   }
 
