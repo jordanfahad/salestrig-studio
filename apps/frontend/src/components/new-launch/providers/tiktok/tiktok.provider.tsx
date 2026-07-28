@@ -154,7 +154,40 @@ const TikTokSettings: FC<{
           </option>
         ))}
       </Select>
-      {isUploadMode && <div className="-mt-[23px] mb-[23px] text-red-600">After posting you fill find a notification inside your Inbox about your post (not content studio)</div>}
+      {/* No negative top margin on this link: <Select> always renders an error
+          slot underneath, so pulling the link up into it would overlap the red
+          validation message if content_posting_method is ever left empty. */}
+      <a
+        href="/tiktok-guide"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-[16px] self-start inline-flex items-center gap-[6px] px-[2px] py-[8px] mobile:py-[12px] rounded-[6px] text-[13px] leading-[20px] text-newTableTextFocused underline underline-offset-[3px] hover:no-underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-newTableTextFocused focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColor"
+      >
+        <span>
+          {t(
+            'tiktok_how_to_post_guide_link',
+            'How to post on TikTok — read this first'
+          )}
+        </span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+          className="shrink-0"
+        >
+          <path
+            d="M14 4h6v6M20 4l-8.5 8.5M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </a>
+      {isUploadMode && <div className="mb-[23px] text-red-600">After posting you fill find a notification inside your Inbox about your post (not content studio)</div>}
       <Select
         label={t('label_auto_add_music', 'Auto add music')}
         {...register('autoAddMusic', {
