@@ -21,9 +21,14 @@ export class PoliciesGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
+    // Match the login routes by prefix, not by substring: '/oauth/authorize'
+    // CONTAINS '/auth', so the old check exempted it - and every future route
+    // with '/auth' anywhere in it - from policy checks entirely. That let a
+    // non-admin approve an OAuth app and mint a token that PublicAuthMiddleware
+    // treats as SUPERADMIN with no channel restrictions.
     if (
-      request.path.indexOf('/auth') > -1 ||
-      request.path.indexOf('/auth') > -1 ||
+      request.path === '/auth' ||
+      request.path.startsWith('/auth/') ||
       request.path.indexOf('/integrations/social-connect') > -1 ||
       request.path.indexOf('/integrations/provider') > -1
     ) {
