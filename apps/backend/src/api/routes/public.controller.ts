@@ -162,7 +162,11 @@ export class PublicController {
     @Req() req: Request
   ) {
     const { url } = query;
-    if (!url.endsWith('mp4')) {
+    // Deliberately endsWith and not the shared isVideoPath helper: this route
+    // proxies an arbitrary remote URL, so the suffix has to be exact rather
+    // than "contains .mp4 somewhere". The cover picker streams through here,
+    // so .mov needs the same allowance or its thumbnail dialog 400s.
+    if (!url.endsWith('mp4') && !url.endsWith('mov')) {
       return res.status(400).send('Invalid video URL');
     }
 

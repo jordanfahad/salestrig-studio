@@ -20,6 +20,7 @@ const ALLOWED_MIME = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  'video/quicktime',
 ]);
 
 @Injectable()

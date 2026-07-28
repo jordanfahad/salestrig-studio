@@ -17,6 +17,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Input } from '@gitroom/react/form/input';
 import { TiktokPreview } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.preview';
+import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 
 const TikTokSettings: FC<{
   values?: any;
@@ -26,7 +27,7 @@ const TikTokSettings: FC<{
   const t = useT();
 
   const isTitle = useMemo(() => {
-    return value?.[0]?.image?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1);
+    return value?.[0]?.image?.some((p) => !isVideoPath(p?.path));
   }, [value]);
 
   const hasMedia = (value?.[0]?.image?.length ?? 0) > 0;
@@ -141,10 +142,15 @@ const TikTokSettings: FC<{
         This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`
         )}
       </div>
+      {/* Default to UPLOAD: our TikTok app is still on sandbox credentials, and
+          TikTok rejects every DIRECT_POST from a sandbox app with "App not
+          approved for public posting". UPLOAD works on sandbox and production
+          alike, so it is the only safe option to pre-select. Change this back to
+          DIRECT_POST once TikTok approves the app for public posting. */}
       <Select
         label={t('label_content_posting_method', 'Content posting method')}
         {...register('content_posting_method', {
-          value: 'DIRECT_POST',
+          value: 'UPLOAD',
         })}
       >
         <option value="">{t('select', 'Select')}</option>
@@ -187,9 +193,17 @@ const TikTokSettings: FC<{
           />
         </svg>
       </a>
-      {isUploadMode && <div className="mb-[23px] text-red-600">After posting you fill find a notification inside your Inbox about your post (not content studio)</div>}
+      {isUploadMode && (
+        <div className="mb-[23px] text-red-600">
+          {t(
+            'tiktok_upload_mode_inbox_notice',
+            'After posting, you will find a notification about your post in your TikTok Inbox (not Content Studio).'
+          )}
+        </div>
+      )}
       <Select
         label={t('label_auto_add_music', 'Auto add music')}
+        disabled={isUploadMode}
         {...register('autoAddMusic', {
           value: 'no',
         })}
@@ -242,6 +256,7 @@ const TikTokSettings: FC<{
         <Checkbox
           label={t('video_made_with_ai', 'Video made with AI')}
           variant="hollow"
+          disabled={isUploadMode}
           {...register('video_made_with_ai', {
             value: false,
           })}

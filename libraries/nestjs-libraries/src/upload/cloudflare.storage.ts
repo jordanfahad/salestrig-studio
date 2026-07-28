@@ -21,6 +21,9 @@ const ALLOWED_MIME_TYPES = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  // Kept in step with local.storage.ts: if STORAGE_PROVIDER is ever switched
+  // to cloudflare, .mov must not silently start failing again.
+  'video/quicktime',
   'audio/mpeg',
   'audio/mp4',
   'audio/wav',

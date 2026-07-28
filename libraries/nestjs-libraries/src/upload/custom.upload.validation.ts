@@ -15,6 +15,9 @@ const ALLOWED_MIME_TYPES = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  // iPhones record .mov whatever the codec setting, so refusing QuickTime
+  // meant the media picker offered a file the upload then rejected.
+  'video/quicktime',
 ]);
 
 @Injectable()

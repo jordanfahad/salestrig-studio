@@ -340,6 +340,19 @@ export class IntegrationRepository {
     });
   }
 
+  // Every live channel, whatever its expiration: the caller keeps one refresh
+  // workflow per channel alive, and a channel already past its expiration is exactly
+  // the one that needs the workflow back.
+  getIntegrationsToKeepRefreshed() {
+    return this._integration.model.integration.findMany({
+      where: {
+        deletedAt: null,
+        inBetweenSteps: false,
+        refreshNeeded: false,
+      },
+    });
+  }
+
   async setBetweenRefreshSteps(id: string) {
     return this._integration.model.integration.update({
       where: {

@@ -41,6 +41,7 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
+import { readablePostError } from '@gitroom/frontend/components/launches/helpers/post.error';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 
@@ -449,27 +450,53 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               />
               {/* Honest publish status for an existing post + direct link to
                   the live post when it was actually pushed. */}
-              {existingData?.posts?.[0]?.state === 'PUBLISHED' && (
-                <span className="inline-flex items-center gap-[6px] rounded-[6px] bg-green-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-green-500">
-                  {t('status_live', 'Live')}
-                  {!!existingData?.posts?.[0]?.releaseURL && (
+              {existingData?.posts?.[0]?.state === 'PUBLISHED' &&
+                (existingData?.posts?.[0]?.releaseId === 'missing' ? (
+                  // TikTok upload (inbox) mode hands back releaseId 'missing'
+                  // and a releaseURL pointing at TikTok's DMs, so there is no
+                  // post to view - the video is still sitting in the app,
+                  // waiting for someone to finish it there.
+                  <span
+                    className="inline-flex items-center gap-[6px] rounded-[6px] bg-amber-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-amber-500"
+                    title={t(
+                      'status_in_tiktok_inbox_tip',
+                      'TikTok received the video but did not publish it - open the TikTok app to finish posting.'
+                    )}
+                  >
+                    {t('status_in_tiktok_inbox', 'In TikTok inbox')}
                     <a
-                      href={existingData.posts[0].releaseURL!}
+                      href="/tiktok-guide"
                       target="_blank"
                       rel="noreferrer"
                       className="underline hover:no-underline"
                     >
-                      {t('view_live_post', 'View post')}
+                      {t('how_to_finish_post', 'How to finish')}
                     </a>
-                  )}
-                </span>
-              )}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-[6px] rounded-[6px] bg-green-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-green-500">
+                    {t('status_live', 'Live')}
+                    {!!existingData?.posts?.[0]?.releaseURL && (
+                      <a
+                        href={existingData.posts[0].releaseURL!}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:no-underline"
+                      >
+                        {t('view_live_post', 'View post')}
+                      </a>
+                    )}
+                  </span>
+                ))}
               {existingData?.posts?.[0]?.state === 'ERROR' && (
                 <span
                   className="inline-flex items-center rounded-[6px] bg-red-500/15 px-[8px] py-[2px] text-[12px] font-semibold text-red-500"
-                  title={(existingData?.posts?.[0] as any)?.error || undefined}
+                  title={
+                    readablePostError(existingData?.posts?.[0]?.error) ||
+                    t('status_failed_tip', 'Publishing failed')
+                  }
                 >
-                  {t('status_not_published', 'Not published')}
+                  {t('status_failed', 'Failed')}
                 </span>
               )}
               {existingData?.posts?.[0]?.state === 'QUEUE' && (

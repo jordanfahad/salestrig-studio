@@ -8,12 +8,13 @@ import {
 import dayjs from 'dayjs';
 import {
   BadBody,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -25,6 +26,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   name = 'Tiktok';
   isBetweenSteps = false;
   convertToJPEG = true;
+  // TikTok access tokens die after 24 hours, so the channel has to refresh itself on
+  // a schedule - without this no refresh workflow is ever started for it.
+  refreshCron = true;
   scopes = [
     'video.list',
     'user.info.basic',
@@ -40,6 +44,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     return 2000;
   }
 
+  // Every endpoint and body decision in this provider goes through here, so the
+  // photo/video choice can never differ between them.
+  private isPhotoPost(firstPost: PostDetails<TikTokDto>): boolean {
+    return !isVideoPath(firstPost?.media?.[0]?.path);
+  }
+
   override async checkValidity(
     items: Array<ValidityMedia[]>
   ): Promise<string | true> {
@@ -49,12 +59,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
     if (
       (firstItems?.length ?? 0) > 1 &&
-      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+      firstItems?.some((p) => isVideoPath(p?.path))
     ) {
       return 'Only pictures are supported when selecting multiple items';
     } else if (
       firstItems?.length !== 1 &&
-      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
+      isVideoPath(firstItems?.[0]?.path)
     ) {
       return 'You need one media';
     }
@@ -226,7 +236,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('invalid_params') > -1) {
+    // TikTok returns 'invalid_param'; the singular also matches the plural form.
+    if (body.indexOf('invalid_param') > -1) {
       return {
         type: 'bad-body' as const,
         value: 'Invalid request parameters, please check content format',
@@ -277,6 +288,19 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         body: new URLSearchParams(value).toString(),
       })
     ).json();
+
+    // A refresh_token only lives 365 days and dies early if the user revokes the app,
+    // so this failure is permanent: throwing here flags the channel for a reconnect
+    // instead of asking for user info with an undefined bearer token.
+    if (!access_token) {
+      throw new RefreshToken(
+        this.identifier,
+        JSON.stringify(all),
+        {} as BodyInit,
+        all?.error_description ||
+          'TikTok refused to refresh the token, please connect the channel again'
+      );
+    }
 
     const {
       data: {
@@ -480,7 +504,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = this.isPhotoPost(firstPost);
     const method = firstPost?.settings?.content_posting_method;
 
     if (method === 'DIRECT_POST') {
@@ -514,6 +538,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',
               }
             : {}),
+          // TikTok takes the cover frame in post_info, and only direct posts
+          // carry a post_info - the inbox upload has to finish it by hand.
+          ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp
+            ? {
+                video_cover_timestamp_ms:
+                  firstPost?.media?.[0]?.thumbnailTimestamp,
+              }
+            : {}),
         },
       };
     }
@@ -530,7 +562,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = this.isPhotoPost(firstPost);
 
     if (isPhoto) {
       return {
@@ -551,12 +583,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       source_info: {
         source: 'PULL_FROM_URL',
         video_url: firstPost?.media?.[0]?.path!,
-        ...(firstPost?.media?.[0]?.thumbnailTimestamp!
-          ? {
-              video_cover_timestamp_ms:
-                firstPost?.media?.[0]?.thumbnailTimestamp!,
-            }
-          : {}),
       },
     };
   }
@@ -568,7 +594,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = this.isPhotoPost(firstPost);
 
     console.log({
       ...this.buildTikokPostInfoBody(firstPost),
@@ -580,7 +606,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          !hasExtension(firstPost?.media?.[0]?.path, 'mp4')
+          isPhoto
         )}`,
         {
           method: 'POST',

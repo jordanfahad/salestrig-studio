@@ -48,6 +48,7 @@ import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
+import { readablePostError } from '@gitroom/frontend/components/launches/helpers/post.error';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
@@ -1025,6 +1026,10 @@ const CalendarItem: FC<{
   // a row of always-on icons blows the grid out horizontally (dead space when
   // you swipe sideways). ListView renders with display="day".
   const touchActions = display === 'day' ? 'mobile:block' : '';
+  // TikTok's upload (inbox) mode reports success with releaseId 'missing': the
+  // video reached the account but nobody has published it yet, so a green "Live"
+  // would be a lie on the one channel the team posts to that way every day.
+  const isInInbox = state === 'PUBLISHED' && post.releaseId === 'missing';
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -1056,7 +1061,10 @@ const CalendarItem: FC<{
         <div
           className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
           data-tooltip-id="tooltip"
-          data-tooltip-content={post.error || 'An error occurred while publishing this post'}
+          data-tooltip-content={
+            readablePostError(post.error) ||
+            'An error occurred while publishing this post'
+          }
         >
           !
         </div>
@@ -1181,7 +1189,10 @@ const CalendarItem: FC<{
             <span
               className={clsx(
                 'inline-flex items-center rounded-[4px] px-[4px] py-[1px] text-[10px] font-semibold leading-[14px]',
-                state === 'PUBLISHED' && 'bg-green-500/15 text-green-500',
+                state === 'PUBLISHED' &&
+                  (isInInbox
+                    ? 'bg-amber-500/15 text-amber-500'
+                    : 'bg-green-500/15 text-green-500'),
                 state === 'ERROR' && 'bg-red-500/15 text-red-500',
                 state === 'DRAFT' && 'bg-slate-500/15 text-slate-400',
                 state === 'QUEUE' &&
@@ -1192,12 +1203,20 @@ const CalendarItem: FC<{
               data-tooltip-id="tooltip"
               data-tooltip-content={
                 state === 'ERROR'
-                  ? post.error || t('status_failed_tip', 'Publishing failed')
+                  ? readablePostError(post.error) ||
+                    t('status_failed_tip', 'Publishing failed')
+                  : isInInbox
+                  ? t(
+                      'status_in_tiktok_inbox_tip',
+                      'TikTok received the video but did not publish it - open the TikTok app to finish posting.'
+                    )
                   : undefined
               }
             >
               {state === 'PUBLISHED'
-                ? t('status_live', 'Live')
+                ? isInInbox
+                  ? t('status_in_inbox', 'In inbox')
+                  : t('status_live', 'Live')
                 : state === 'ERROR'
                 ? t('status_failed', 'Failed')
                 : state === 'DRAFT'

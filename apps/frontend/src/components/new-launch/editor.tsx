@@ -570,7 +570,7 @@ export const Editor: FC<{
       appendImages(result);
       uppy.clear();
     },
-    allowedFileTypes: 'image/*,video/mp4',
+    allowedFileTypes: 'image/*,video/mp4,video/quicktime',
     onStart: () => {},
     onEnd: () => setLoading(false),
   });

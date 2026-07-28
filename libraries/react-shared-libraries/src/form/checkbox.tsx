@@ -7,6 +7,7 @@ export const Checkbox = forwardRef<
   null,
   {
     checked?: boolean;
+    disabled?: boolean;
     disableForm?: boolean;
     name?: string;
     className?: string;
@@ -20,13 +21,19 @@ export const Checkbox = forwardRef<
     variant?: 'default' | 'hollow';
   }
 >((props, ref: any) => {
-  const { checked, className, label, disableForm, variant } = props;
+  const { checked, className, label, disabled, disableForm, variant } = props;
   const form = useFormContext();
   const register = disableForm ? {} : form.register(props.name!);
   const watch = disableForm ? false : form.watch(props.name!);
   const val = watch || checked;
 
   const changeStatus = useCallback(() => {
+    // This is a div, not a native input, so nothing stops the click for us -
+    // callers that pass `disabled` (TikTok upload mode, generator while it runs)
+    // expect the value to stay put.
+    if (disabled) {
+      return;
+    }
     props?.onChange?.({
       target: {
         name: props.name!,
@@ -42,15 +49,16 @@ export const Checkbox = forwardRef<
         },
       });
     }
-  }, [val]);
+  }, [val, disabled]);
   return (
-    <div className="flex gap-[10px]">
+    <div className={clsx('flex gap-[10px]', disabled && 'opacity-50')}>
       <div
         ref={ref}
         {...disableForm ? {} : form.register(props.name!)}
         onClick={changeStatus}
         className={clsx(
-          'cursor-pointer rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex text-white',
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+          'rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex text-white',
           variant === 'default' || !variant
             ? 'bg-forth'
             : 'border-customColor1 border-2 bg-customColor2',

@@ -14,7 +14,7 @@ import {
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
-import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -474,7 +474,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     if (isStory) {
       let lastPostId = '';
       for (const media of firstPost?.media || []) {
-        const isVideoStory = hasExtension(media.path, 'mp4');
+        const isVideoStory = isVideoPath(media.path);
         if (isVideoStory) {
           const { video_id, upload_url } = await (
             await this.fetch(
@@ -563,7 +563,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
       finalId = lastPostId;
       finalUrl = `https://www.facebook.com/stories/${lastPostId}`;
-    } else if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
+    } else if (isVideoPath(firstPost?.media?.[0]?.path)) {
       const {
         id: videoId,
         permalink_url,
@@ -582,7 +582,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               published: true,
             }),
           },
-          'upload mp4'
+          'upload video'
         )
       ).json();
 

@@ -17,7 +17,12 @@ export class IntegrationsActivity {
     return this._integrationService.getIntegrationById(orgId, id);
   }
 
-  async refreshToken(integration: Integration) {
+  // Undecorated methods are not registered on the worker, so refreshTokenWorkflow
+  // could never actually run its refresh step. Activity names share one flat
+  // namespace across every @Activity class, so this cannot be called `refreshToken`
+  // - PostActivity already owns that name and the later registration silently wins.
+  @ActivityMethod()
+  async refreshIntegrationToken(integration: Integration) {
     return this._refreshIntegrationService.refresh(integration);
   }
 }

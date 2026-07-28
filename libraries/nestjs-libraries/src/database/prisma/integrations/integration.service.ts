@@ -282,6 +282,10 @@ export class IntegrationService {
     return this._integrationRepository.setBetweenRefreshSteps(id);
   }
 
+  async getIntegrationsToKeepRefreshed() {
+    return this._integrationRepository.getIntegrationsToKeepRefreshed();
+  }
+
   async refreshTokens() {
     const integrations = await this._integrationRepository.needsToBeRefreshed();
     for (const integration of integrations) {

@@ -47,6 +47,10 @@ const PUBLIC_API_ALLOWED_MIME = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  // Matches the media-picker allow-list: ValidUrlExtension now accepts .mov,
+  // so this route has to sniff-accept QuickTime or it would pass the URL check
+  // and then reject the bytes.
+  'video/quicktime',
 ]);
 import * as Sentry from '@sentry/nestjs';
 import {

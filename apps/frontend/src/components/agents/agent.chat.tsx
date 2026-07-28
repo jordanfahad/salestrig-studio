@@ -33,7 +33,7 @@ import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 
 export const AgentChat: FC = () => {
   const { backendUrl } = useVariables();
@@ -163,7 +163,7 @@ const NewInput: FC<InputProps> = (props) => {
                 ? '\n[--Media--]' +
                   media
                     .map((m) =>
-                      hasExtension(m.path, 'mp4')
+                      isVideoPath(m.path)
                         ? `Video: ${m.path}`
                         : `Image: ${m.path}`
                     )

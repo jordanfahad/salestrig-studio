@@ -106,7 +106,7 @@ export const TiktokGuideComponent: FC = () => {
     ),
     t(
       'tiktok_guide_studio_step_7',
-      'Set "Content posting method" to "Upload content to TikTok without posting it". This is the step from the box above.'
+      'Check that "Content posting method" still reads "Upload content to TikTok without posting it". It starts there, but this is the step from the box above, so look at it every time.'
     ),
     t(
       'tiktok_guide_studio_step_8',
@@ -141,23 +141,22 @@ export const TiktokGuideComponent: FC = () => {
     {
       title: t(
         'tiktok_guide_normal_live_title',
-        'The post says "Live" but the profile is empty'
+        'The post is in the inbox but the profile is empty'
       ),
       body: t(
         'tiktok_guide_normal_live_body',
-        'The green "Live" badge only means TikTok accepted your video into the inbox. It does not mean the video is on the profile. It goes on the profile when someone finishes it in the TikTok app.'
+        'Expected. Studio shows an amber "In inbox" badge, not a green "Live" one, precisely because the video is only sitting in the account inbox. It reaches the profile when someone finishes it in the TikTok app. The badge stays amber even after that, because Studio has no way of knowing which video you published - use "Connect Post" on the calendar entry if you want to match it up and see its statistics.'
       ),
     },
     {
       title: t(
         'tiktok_guide_normal_link_title',
-        'The "View post" link opens TikTok messages'
+        'The post says "In inbox" instead of "Live"'
       ),
       body: t(
         'tiktok_guide_normal_link_body',
-        'There is no post to link to yet, so the link points at your TikTok messages instead. Ignore it. The address it opens is:'
+        'Correct. There is no published video to link to yet, so the calendar shows an amber "In inbox" and the post itself shows "In TikTok inbox" with a "How to finish" link. It turns into a real post once you finish it in the TikTok app.'
       ),
-      code: 'https://www.tiktok.com/messages?lang=en',
     },
     {
       title: t(
@@ -176,17 +175,7 @@ export const TiktokGuideComponent: FC = () => {
       ),
       body: t(
         'tiktok_guide_normal_greyed_body',
-        'Correct. Once you choose the upload option, privacy, comments, duet, stitch and the disclosure boxes go grey, because TikTok does not take them on an unfinished upload. "Video made with AI" and "Auto add music" stay clickable, but they are not sent either. Set all of that in the TikTok app instead.'
-      ),
-    },
-    {
-      title: t(
-        'tiktok_guide_normal_typo_title',
-        'The red notice has a spelling mistake'
-      ),
-      body: t(
-        'tiktok_guide_normal_typo_body',
-        'It reads "After posting you fill find a notification inside your Inbox about your post (not content studio)". It should say "will find". The advice itself is right: check your inbox.'
+        'Correct. Once you choose the upload option, privacy, comments, duet, stitch, the disclosure boxes, "Video made with AI" and "Auto add music" all go grey, because TikTok does not take them on an unfinished upload. Set all of that in the TikTok app instead.'
       ),
     },
     {
@@ -210,10 +199,10 @@ export const TiktokGuideComponent: FC = () => {
       ),
     },
     {
-      title: t('tiktok_guide_limit_mp4_title', 'MP4 videos only'),
+      title: t('tiktok_guide_limit_mp4_title', 'MP4 and MOV videos'),
       body: t(
         'tiktok_guide_limit_mp4_body',
-        'A video has to be an .mp4 file. Studio will let you pick a .mov, but it will be sent to TikTok as a photo and it will fail. iPhones record .mov by default, so re-export or convert the file first.'
+        'A video has to be an .mp4 or a .mov file. iPhones record .mov, and those upload and post as they are, so there is nothing to convert. Anything else is refused with "Unsupported file type."'
       ),
     },
     {
@@ -309,7 +298,7 @@ export const TiktokGuideComponent: FC = () => {
                 <div className="text-[14px] leading-[1.55] text-customColor18 mt-[2px]">
                   {t(
                     'tiktok_guide_option_direct_note',
-                    'This is what the dropdown starts on. It fails every time right now. Do not leave it here.'
+                    'It fails every time right now. Never switch to it, and change it back if you find a post already set to it.'
                   )}
                 </div>
               </div>
@@ -339,7 +328,7 @@ export const TiktokGuideComponent: FC = () => {
           <Paragraph>
             {t(
               'tiktok_guide_critical_reset',
-              'Every new TikTok post starts on "Post content directly to TikTok" again, so you have to change it on every single post.'
+              'A new TikTok post now starts on the upload option already selected. Glance at it before you send anyway - an older post you reopen keeps whatever was saved on it.'
             )}
           </Paragraph>
 
@@ -462,13 +451,13 @@ export const TiktokGuideComponent: FC = () => {
             <div className="text-[15px] font-[600] leading-[1.45]">
               {t(
                 'tiktok_guide_fix_mov_title',
-                'A video was rejected and it was a .mov file'
+                'A video from an iPhone would not upload'
               )}
             </div>
             <div className="text-[15px] leading-[1.65] text-customColor18">
               {t(
                 'tiktok_guide_fix_mov',
-                'Anything that is not an .mp4 is sent to TikTok as a photo, and TikTok turns it away. Re-export or convert the video to .mp4 and upload it again.'
+                'iPhone .mov files are accepted, so this is usually the file itself. "Unsupported file type." means the file is not really a video - re-save it from Photos rather than sending it through a chat app first, which can hand over a still frame instead.'
               )}
             </div>
           </div>

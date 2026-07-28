@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
@@ -55,14 +56,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     if (
       vals?.post_as_images_carousel &&
       ((firstPost?.length ?? 0) < 2 ||
-        firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
+        firstPost?.some((p) => isVideoPath(p?.path)))
     ) {
       return 'Carousel can only be created with 2 or more images and no videos.';
     }
 
     if (
       (firstPost?.length ?? 0) > 1 &&
-      firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+      firstPost?.some((p) => isVideoPath(p?.path))
     ) {
       return 'Can have maximum 1 media when selecting a video.';
     }
@@ -284,7 +285,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type = 'personal' as 'company' | 'personal'
   ) {
     // Determine the appropriate endpoint based on file type
-    const isVideo = hasExtension(fileName, 'mp4');
+    const isVideo = isVideoPath(fileName);
     const isPdf = hasExtension(fileName, 'pdf');
 
     let endpoint: string;
@@ -638,7 +639,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = hasExtension(mediaUrl, 'mp4');
+    const isVideo = isVideoPath(mediaUrl);
     const isGif = lookup(mediaUrl) === 'image/gif';
 
     if (isVideo || isGif) {

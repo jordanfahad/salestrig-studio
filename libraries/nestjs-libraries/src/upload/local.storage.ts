@@ -15,6 +15,11 @@ const LOCAL_STORAGE_ALLOWED_MIME = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  // iPhones record .mov whatever the codec setting, so refusing QuickTime
+  // meant the media picker offered a file the upload then rejected. It is
+  // sniffed from the bytes and stored under a server-generated name/extension
+  // like every other entry here, and /uploads is served with nosniff.
+  'video/quicktime',
   'audio/mpeg',
   'audio/mp4',
   'audio/wav',

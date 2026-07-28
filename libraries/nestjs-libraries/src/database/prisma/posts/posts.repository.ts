@@ -419,6 +419,9 @@ export class PostsRepository {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+        // a retry that finally succeeds must drop the previous attempt's error in the
+        // same write, otherwise the calendar keeps flagging a published post as failed
+        error: null,
       },
     });
   }
