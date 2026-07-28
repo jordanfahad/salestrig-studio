@@ -220,7 +220,10 @@ export class IntegrationsController {
     // but must not connect brand new ones: the workspace would be billed for a
     // channel that, not being in their assignment list, they could never see.
     if (refresh) {
-      await this._integrationService.assertChannelInScope(org, refresh);
+      await this._integrationService.assertChannelInScopeByInternalId(
+        org,
+        refresh
+      );
     } else if (hasChannelRestriction(org)) {
       throw new HttpForbiddenException();
     }

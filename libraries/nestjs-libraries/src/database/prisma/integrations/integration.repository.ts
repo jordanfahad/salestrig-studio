@@ -619,6 +619,24 @@ export class IntegrationRepository {
     });
   }
 
+  /**
+   * Resolve a channel by the id the platform knows it by. The re-authorize
+   * link carries internalId rather than our own id, so scope checks on that
+   * flow have to translate first.
+   */
+  getIntegrationByInternalId(orgId: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: orgId,
+        internalId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
   /** Which channel a plug hangs off, so its routes can be scope-checked. */
   getPlugIntegrationId(orgId: string, plugId: string) {
     return this._plugs.model.plugs.findFirst({

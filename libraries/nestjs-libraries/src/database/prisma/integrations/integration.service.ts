@@ -178,6 +178,22 @@ export class IntegrationService {
     }
   }
 
+  /**
+   * Scope check for the re-authorize flow, which identifies the channel by
+   * internalId. Accepts either form so it stays correct if a caller passes
+   * our own id instead.
+   */
+  async assertChannelInScopeByInternalId(org: any, internalId: string) {
+    if (!hasChannelRestriction(org)) {
+      return;
+    }
+    const found = await this._integrationRepository.getIntegrationByInternalId(
+      org.id,
+      internalId
+    );
+    await this.assertChannelInScope(org, found?.id || internalId);
+  }
+
   /** A plug is reachable only through the channel it automates. */
   async assertPlugInScope(org: any, plugId: string) {
     if (!hasChannelRestriction(org)) {
