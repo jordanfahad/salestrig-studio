@@ -109,7 +109,8 @@ model User {
   orderSeller           Orders[]             @relation("orderSeller")
   payoutProblems        PayoutProblems[]
   agencies              SocialMediaAgency?
-  picture               Media?               @relation(fields: [pictureId], references: [id])
+  picture               Media?               @relation("userPicture", fields: [pictureId], references: [id])
+  uploadedMedia         Media[]              @relation("mediaUploader")
   organizations         UserOrganization[]
   sendSuccessEmails     Boolean              @default(true)
   sendFailureEmails     Boolean              @default(true)
@@ -256,14 +257,22 @@ model Media {
   thumbnail          String?
   alt                String?
   thumbnailTimestamp Int?
+  // Who uploaded this creative. Nullable on purpose: every row that existed
+  // before this column, and anything created by an org-level API key (no user
+  // context), has no uploader. A delegated member reads "no uploader" as "not
+  // mine" - see mediaScopeWhere() in organizations/customer.scope.ts.
+  uploadedById       String?
   organization       Organization        @relation(fields: [organizationId], references: [id])
+  uploadedBy         User?               @relation("mediaUploader", fields: [uploadedById], references: [id])
   agencies           SocialMediaAgency[]
-  userPicture        User[]
+  // Named because Media <-> User now has two relations (avatar + uploader).
+  userPicture        User[]              @relation("userPicture")
   oauthApps          OAuthApp[]
 
   @@index([name])
   @@index([organizationId])
   @@index([type])
+  @@index([uploadedById])
 }
 
 model SocialMediaAgency {

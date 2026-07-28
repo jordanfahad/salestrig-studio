@@ -63,13 +63,19 @@ export class PostsRepository {
     });
   }
 
-  getOldPosts(orgId: string, date: string) {
+  // `scope` is channelScopeWhere(): `{}` for an unrestricted member, so the
+  // query is identical to what it was. It matters because the ids returned here
+  // resolve through the UNAUTHENTICATED /public/posts/:id preview, which echoes
+  // the post's `image` JSON - without it a delegated member could enumerate
+  // every post in the workspace and read another client's creatives that way.
+  getOldPosts(orgId: string, date: string, scope?: any) {
     return this._post.model.post.findMany({
       where: {
         integration: {
           refreshNeeded: false,
           inBetweenSteps: false,
           disabled: false,
+          ...(scope || {}),
         },
         organizationId: orgId,
         publishDate: {

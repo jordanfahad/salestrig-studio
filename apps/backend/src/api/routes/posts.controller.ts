@@ -161,7 +161,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query('date') date: string
   ) {
-    return this._postsService.getOldPosts(org.id, date);
+    return this._postsService.getOldPosts(org.id, date, channelScopeWhere(org));
   }
 
   @Get('/group/:group/debug-export')
@@ -277,11 +277,16 @@ export class PostsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
   async generatePosts(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Body() body: GeneratorDto,
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(org.id, body)) {
+    for await (const event of this._agentGraphService.start(
+      org.id,
+      body,
+      user?.id
+    )) {
       res.write(JSON.stringify(event) + '\n');
     }
 

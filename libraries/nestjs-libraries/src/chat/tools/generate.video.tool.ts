@@ -12,7 +12,10 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
-import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import {
+  checkAuth,
+  getRequestUserId,
+} from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
 export class GenerateVideoTool implements AgentToolInterface {
@@ -60,17 +63,24 @@ export class GenerateVideoTool implements AgentToolInterface {
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
-        const value = await this._mediaService.generateVideo(org, {
-          type: inputData.identifier,
-          output: inputData.output,
-          customParams: inputData.customParams.reduce(
-            (all: Record<string, any>, current: { key: string; value: any }) => ({
-              ...all,
-              [current.key]: current.value,
-            }),
-            {} as Record<string, any>
-          ),
-        });
+        const value = await this._mediaService.generateVideo(
+          org,
+          {
+            type: inputData.identifier,
+            output: inputData.output,
+            customParams: inputData.customParams.reduce(
+              (
+                all: Record<string, any>,
+                current: { key: string; value: any }
+              ) => ({
+                ...all,
+                [current.key]: current.value,
+              }),
+              {} as Record<string, any>
+            ),
+          },
+          getRequestUserId(context)
+        );
 
         return {
           url: value.path,

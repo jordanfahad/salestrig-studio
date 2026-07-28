@@ -14,7 +14,9 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
+import { mediaScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
@@ -36,17 +38,26 @@ export class MediaController {
   ) {}
 
   @Delete('/:id')
-  deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
-    return this._mediaService.deleteMedia(org.id, id);
+  deleteMedia(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string
+  ) {
+    return this._mediaService.deleteMedia(
+      org.id,
+      id,
+      mediaScopeWhere(org, user?.id)
+    );
   }
 
   @Post('/generate-video')
   generateVideo(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Body() body: VideoDto
   ) {
     console.log('hello');
-    return this._mediaService.generateVideo(org, body);
+    return this._mediaService.generateVideo(org, body, user?.id);
   }
 
   @Post('/generate-image')
@@ -71,6 +82,7 @@ export class MediaController {
   @Post('/generate-image-with-prompt')
   async generateImageFromText(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Req() req: Request,
     @Body('prompt') prompt: string
   ) {
@@ -81,7 +93,13 @@ export class MediaController {
 
     const file = await this.storage.uploadSimple(image.output);
 
-    return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+    return this._mediaService.saveFile(
+      org.id,
+      file.split('/').pop(),
+      file,
+      undefined,
+      user?.id
+    );
   }
 
   @Post('/upload-server')
@@ -89,6 +107,7 @@ export class MediaController {
   @UsePipes(new CustomFileValidationPipe())
   async uploadServer(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @UploadedFile() file: Express.Multer.File
   ) {
     const originalName = file?.originalname || '';
@@ -97,13 +116,15 @@ export class MediaController {
       org.id,
       uploadedFile.originalname,
       uploadedFile.path,
-      originalName
+      originalName,
+      user?.id
     );
   }
 
   @Post('/save-media')
   async saveMedia(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Req() req: Request,
     @Body('name') name: string,
     @Body('originalName') originalName: string
@@ -115,16 +136,22 @@ export class MediaController {
       org.id,
       name,
       process.env.CLOUDFLARE_BUCKET_URL + '/' + name,
-      originalName || undefined
+      originalName || undefined,
+      user?.id
     );
   }
 
   @Post('/information')
   saveMediaInformation(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Body() body: SaveMediaInformationDto
   ) {
-    return this._mediaService.saveMediaInformation(org.id, body);
+    return this._mediaService.saveMediaInformation(
+      org.id,
+      body,
+      mediaScopeWhere(org, user?.id)
+    );
   }
 
   @Post('/upload-simple')
@@ -132,6 +159,7 @@ export class MediaController {
   @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @UploadedFile('file') file: Express.Multer.File,
     @Body('preventSave') preventSave: string = 'false'
   ) {
@@ -147,13 +175,15 @@ export class MediaController {
       org.id,
       getFile.originalname,
       getFile.path,
-      originalName
+      originalName,
+      user?.id
     );
   }
 
   @Post('/:endpoint')
   async uploadFile(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Req() req: Request,
     @Res() res: Response,
     @Param('endpoint') endpoint: string
@@ -172,7 +202,8 @@ export class MediaController {
       name,
       // @ts-ignore
       upload.Location,
-      originalName || undefined
+      originalName || undefined,
+      user?.id
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
@@ -181,10 +212,18 @@ export class MediaController {
   @Get('/')
   getMedia(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Query('page') page: number,
     @Query('search') search?: string
   ) {
-    return this._mediaService.getMedia(org.id, page, search);
+    // A member delegated to specific channels only browses their own uploads
+    // plus anything an admin uploaded - never another client's creatives.
+    return this._mediaService.getMedia(
+      org.id,
+      page,
+      search,
+      mediaScopeWhere(org, user?.id)
+    );
   }
 
   @Get('/video-options')

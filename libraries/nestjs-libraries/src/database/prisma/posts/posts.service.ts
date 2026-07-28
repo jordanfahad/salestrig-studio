@@ -358,7 +358,15 @@ export class PostsService {
     );
   }
 
-  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
+  // `orgId` is optional: the orchestrator resolves media at publish time with no
+  // organization context and must keep working. The in-app read paths pass it so
+  // a media id can never be resolved across workspaces.
+  async updateMedia(
+    id: string,
+    imagesList: any[],
+    convertToJPEG = false,
+    orgId?: string
+  ) {
     try {
       let imageUpdateNeeded = false;
       const getImageList = await Promise.all(
@@ -367,7 +375,7 @@ export class PostsService {
             (imagesList || []).map(async (p: any) => {
               if (!p.path && p.id) {
                 imageUpdateNeeded = true;
-                return this._mediaService.getMediaById(p.id);
+                return this._mediaService.getMediaById(p.id, orgId);
               }
 
               return p;
@@ -544,7 +552,8 @@ export class PostsService {
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG
+            convertToJPEG,
+            orgId
           ),
         }))
       ),
@@ -582,7 +591,8 @@ export class PostsService {
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG
+            convertToJPEG,
+            orgId
           ),
         }))
       ),
@@ -594,8 +604,8 @@ export class PostsService {
     return list;
   }
 
-  async getOldPosts(orgId: string, date: string) {
-    return this._postRepository.getOldPosts(orgId, date);
+  async getOldPosts(orgId: string, date: string, scope?: any) {
+    return this._postRepository.getOldPosts(orgId, date, scope);
   }
 
   public async updateTags(orgId: string, post: Post[]): Promise<Post[]> {

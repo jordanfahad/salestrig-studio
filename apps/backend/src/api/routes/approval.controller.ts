@@ -4,6 +4,7 @@ import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import { ApprovalService } from '@gitroom/nestjs-libraries/database/prisma/approval/approval.service';
 import { ApprovalDto } from '@gitroom/nestjs-libraries/dtos/approval/approval.dto';
+import { channelScopeWhere } from '@gitroom/nestjs-libraries/database/prisma/organizations/customer.scope';
 
 @ApiTags('Approvals')
 @Controller('/approvals')
@@ -12,7 +13,7 @@ export class ApprovalController {
 
   @Get('/')
   async queue(@GetOrgFromRequest() org: Organization) {
-    return this._approvalService.getReviewQueue(org.id);
+    return this._approvalService.getReviewQueue(org.id, channelScopeWhere(org));
   }
 
   @Put('/:postId')
@@ -24,7 +25,8 @@ export class ApprovalController {
     return this._approvalService.setApprovalStatus(
       org.id,
       postId,
-      body.approvalStatus
+      body.approvalStatus,
+      channelScopeWhere(org)
     );
   }
 }

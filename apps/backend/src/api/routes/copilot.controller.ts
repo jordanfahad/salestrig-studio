@@ -15,7 +15,8 @@ import {
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { MastraAgent } from '@ag-ui/mastra';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
@@ -27,6 +28,9 @@ import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/p
 export type ChannelsContext = {
   integrations: string;
   organization: string;
+  // Id of the member driving the chat, so anything the agent uploads is
+  // attributed to them (see getRequestUserId in chat/auth.context.ts).
+  user: string;
   ui: string;
 };
 
@@ -62,7 +66,8 @@ export class CopilotController {
   async agent(
     @Req() req: Request,
     @Res() res: Response,
-    @GetOrgFromRequest() organization: Organization
+    @GetOrgFromRequest() organization: Organization,
+    @GetUserFromRequest() user: User
   ) {
     if (
       process.env.OPENAI_API_KEY === undefined ||
@@ -79,6 +84,7 @@ export class CopilotController {
     );
 
     requestContext.set('organization', JSON.stringify(organization));
+    requestContext.set('user', user?.id || '');
     requestContext.set('ui', 'true');
 
     const agents = MastraAgent.getLocalAgents({

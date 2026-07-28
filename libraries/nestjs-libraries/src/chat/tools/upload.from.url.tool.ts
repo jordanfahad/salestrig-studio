@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import {
+  checkAuth,
+  getRequestUserId,
+} from '@gitroom/nestjs-libraries/chat/auth.context';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Readable } from 'stream';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -92,7 +95,9 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
         return this._mediaService.saveFile(
           org.id,
           getFile.originalname,
-          getFile.path
+          getFile.path,
+          undefined,
+          getRequestUserId(context)
         );
       },
     });

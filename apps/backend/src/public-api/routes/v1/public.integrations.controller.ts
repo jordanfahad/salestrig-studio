@@ -91,6 +91,10 @@ export class PublicIntegrationsController {
     }
 
     const getFile = await this.storage.uploadFile(file);
+    // No uploader recorded: the public API authenticates an ORGANIZATION (API
+    // key / OAuth token), never a person, so there is no user to attribute this
+    // to. It therefore stays out of a delegated member's library - fail closed
+    // rather than invent an owner.
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
@@ -132,6 +136,7 @@ export class PublicIntegrationsController {
       encoding: '',
     });
 
+    // No uploader recorded - org-level API auth, see /upload above.
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
@@ -364,6 +369,7 @@ export class PublicIntegrationsController {
     @Body() body: VideoDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
+    // No uploader recorded - org-level API auth, see /upload above.
     return this._mediaService.generateVideo(org, body);
   }
 

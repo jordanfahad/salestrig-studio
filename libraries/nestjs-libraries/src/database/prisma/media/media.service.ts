@@ -2,7 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { Organization } from '@prisma/client';
+import { Organization, Prisma } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
@@ -24,12 +24,14 @@ export class MediaService {
     private _videoManager: VideoManager
   ) {}
 
-  async deleteMedia(org: string, id: string) {
-    return this._mediaRepository.deleteMedia(org, id);
+  async deleteMedia(org: string, id: string, scope?: Prisma.MediaWhereInput) {
+    return this.notFoundWhenOutOfScope(() =>
+      this._mediaRepository.deleteMedia(org, id, scope)
+    );
   }
 
-  getMediaById(id: string) {
-    return this._mediaRepository.getMediaById(id);
+  getMediaById(id: string, orgId?: string) {
+    return this._mediaRepository.getMediaById(id, orgId);
   }
 
   async generateImage(
@@ -52,16 +54,39 @@ export class MediaService {
     return generating;
   }
 
-  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
-    return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
+  saveFile(
+    org: string,
+    fileName: string,
+    filePath: string,
+    originalName?: string,
+    uploadedById?: string
+  ) {
+    return this._mediaRepository.saveFile(
+      org,
+      fileName,
+      filePath,
+      originalName,
+      uploadedById
+    );
   }
 
-  getMedia(org: string, page: number, search?: string) {
-    return this._mediaRepository.getMedia(org, page, search);
+  getMedia(
+    org: string,
+    page: number,
+    search?: string,
+    scope?: Prisma.MediaWhereInput
+  ) {
+    return this._mediaRepository.getMedia(org, page, search, scope);
   }
 
-  saveMediaInformation(org: string, data: SaveMediaInformationDto) {
-    return this._mediaRepository.saveMediaInformation(org, data);
+  saveMediaInformation(
+    org: string,
+    data: SaveMediaInformationDto,
+    scope?: Prisma.MediaWhereInput
+  ) {
+    return this.notFoundWhenOutOfScope(() =>
+      this._mediaRepository.saveMediaInformation(org, data, scope)
+    );
   }
 
   getVideoOptions() {
@@ -81,7 +106,7 @@ export class MediaService {
     return true;
   }
 
-  async generateVideo(org: Organization, body: VideoDto) {
+  async generateVideo(org: Organization, body: VideoDto, uploadedById?: string) {
     const totalCredits = await this._subscriptionService.checkCredits(
       org,
       'ai_videos'
@@ -117,7 +142,13 @@ export class MediaService {
         );
 
         const file = await this.storage.uploadSimple(loadedData);
-        return this.saveFile(org.id, file.split('/').pop(), file);
+        return this.saveFile(
+          org.id,
+          file.split('/').pop(),
+          file,
+          undefined,
+          uploadedById
+        );
       }
     );
   }
@@ -141,5 +172,22 @@ export class MediaService {
     }
 
     return functionToCall(body);
+  }
+
+  /**
+   * A scoped update matches no row when the member is not allowed to see that
+   * creative, and prisma answers with P2025. Turn that into a plain 404, so a
+   * delegated member gets the same answer for "does not exist" and "not yours"
+   * - while a genuine database failure is still re-thrown untouched.
+   */
+  private async notFoundWhenOutOfScope<T>(run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (err: any) {
+      if (err?.code === 'P2025') {
+        throw new HttpException('Media not found', 404);
+      }
+      throw err;
+    }
   }
 }

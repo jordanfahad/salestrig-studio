@@ -36,6 +36,9 @@ const dalle = new DallEAPIWrapper({
 interface WorkflowChannelsState {
   messages: BaseMessage[];
   orgId: string;
+  // Member who asked for the generation, so the pictures it uploads are
+  // attributed to them and stay in their media library.
+  userId?: string;
   question: string;
   hook?: string;
   fresearch?: string;
@@ -123,6 +126,7 @@ export class AgentGraphService {
         tone: null,
         question: null,
         orgId: null,
+        userId: null,
         hook: null,
         content: null,
         date: null,
@@ -349,7 +353,9 @@ export class AgentGraphService {
           const uploadWithId = await this._mediaService.saveFile(
             state.orgId,
             name,
-            upload
+            upload,
+            undefined,
+            state.userId
           );
 
           return {
@@ -377,7 +383,7 @@ export class AgentGraphService {
     return { date: await this._postsService.findFreeDateTime(state.orgId) };
   }
 
-  start(orgId: string, body: GeneratorDto) {
+  start(orgId: string, body: GeneratorDto, userId?: string) {
     const state = AgentGraphService.state();
     const workflow = state
       .addNode('agent', this.startCall.bind(this))
@@ -418,6 +424,7 @@ export class AgentGraphService {
         format: body.format,
         tone: body.tone,
         orgId,
+        userId,
       },
       {
         streamMode: 'values',

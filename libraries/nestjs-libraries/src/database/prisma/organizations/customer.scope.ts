@@ -1,3 +1,5 @@
+import { Prisma, Role } from '@prisma/client';
+
 /**
  * Per-client (Customer) delegation for agency workspaces.
  *
@@ -84,6 +86,52 @@ export function postScopeWhere(
   return requestedCustomer
     ? { AND: [scope, { customerId: requestedCustomer }] }
     : scope;
+}
+
+/**
+ * Prisma `where` fragment restricting the media library for a delegated member.
+ *
+ * Creatives are stored per organization only, so without this a member added to
+ * work on one client would browse every other client's assets in the workspace.
+ * The rule mirrors the channel rule - fail-open for the owner, fail-closed for
+ * members: a restricted member sees a creative only when they uploaded it, or
+ * when whoever uploaded it is an ADMIN/SUPERADMIN of THIS organization (shared
+ * brand assets, logos, templates).
+ *
+ * `Media.uploadedById` is nullable, and NULL deliberately reads as "not mine":
+ * everything uploaded before this column existed, plus anything created by an
+ * org-level API key, stays out of a restricted member's library. That backlog is
+ * exactly what an agency does not want a newly added client's staff to browse.
+ *
+ * The uploader's role is expressed as a relation filter so this stays one query.
+ * Yields `{}` for unrestricted members - the owner and admins keep the identical
+ * query, and cost, they have today.
+ */
+export function mediaScopeWhere(
+  org: OrgWithScope | any,
+  userId?: string
+): Prisma.MediaWhereInput {
+  if (!hasChannelRestriction(org)) {
+    return {};
+  }
+
+  return {
+    OR: [
+      // Own uploads. Skipped rather than matched against `undefined` when the
+      // caller has no user context, so we never widen the scope by accident.
+      ...(userId ? [{ uploadedById: userId }] : []),
+      {
+        uploadedBy: {
+          organizations: {
+            some: {
+              organizationId: org?.id,
+              role: { in: [Role.ADMIN, Role.SUPERADMIN] },
+            },
+          },
+        },
+      },
+    ],
+  };
 }
 
 export function allowedCustomerIds(org: OrgWithScope | any): string[] | null {

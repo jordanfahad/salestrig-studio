@@ -14,6 +14,11 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { User, Organization } from '@prisma/client';
 import { AuthorizeOAuthQueryDto, ApproveOAuthDto } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('OAuth')
 @Controller('/oauth')
@@ -60,7 +65,13 @@ export class OAuthController {
 export class OAuthAuthorizedController {
   constructor(private _oauthService: OAuthService) {}
 
+  // Admins only. The token this mints is authenticated by PublicAuthMiddleware,
+  // which stamps req.org with a SUPERADMIN role and no channel assignments - so
+  // hasChannelRestriction() reads false and the token ignores per-channel
+  // delegation entirely. A restricted member approving an app would hand
+  // themselves an unrestricted key to the whole workspace.
   @Post('/authorize')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async approveOrDeny(
     @Body() body: ApproveOAuthDto,
     @GetUserFromRequest() user: User,

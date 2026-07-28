@@ -7,6 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { isVideoPath } from '@gitroom/helpers/utils/is.video.path';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -311,6 +312,7 @@ export const MediaComponentInner: FC<{
   const { onClose, onSelect, media } = props;
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   const newFetch = useFetch();
+  const toaster = useToaster();
   const [newThumbnail, setNewThumbnail] = useState<string | null>(null);
   const [isEditingThumbnail, setIsEditingThumbnail] = useState(false);
   const [altText, setAltText] = useState<string>(media?.alt || '');
@@ -346,17 +348,27 @@ export const MediaComponentInner: FC<{
       path = data.path;
     }
 
-    const media = await (
-      await newFetch('/media/information', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: props.media.id,
-          alt: altText,
-          thumbnail: path,
-          thumbnailTimestamp: thumbnailTimestamp,
-        }),
-      })
-    ).json();
+    const response = await newFetch('/media/information', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: props.media.id,
+        alt: altText,
+        thumbnail: path,
+        thumbnailTimestamp: thumbnailTimestamp,
+      }),
+    });
+
+    // The save can legitimately be refused - a delegated member may not edit a
+    // creative outside their library. Never feed the error body to onSelect: it
+    // would replace a working image in the editor with an object that has no
+    // path, and that broken entry would then be saved with the post.
+    if (!response.ok) {
+      setLoading(false);
+      toaster.show('Could not update this media', 'warning');
+      return;
+    }
+
+    const media = await response.json();
 
     onSelect(media);
     onClose();
