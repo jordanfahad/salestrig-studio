@@ -22,6 +22,7 @@ import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { planLinkedinVideoUpload } from './linkedin.video-upload';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -298,7 +299,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     const {
-      value: { uploadUrl, image, video, document, uploadInstructions, ...all },
+      value: { uploadUrl, image, video, document, uploadInstructions, uploadToken },
     } = await (
       await this.fetch(
         `https://api.linkedin.com/rest/${endpoint}?action=initializeUpload`,
@@ -332,13 +333,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
     const finalOutput = video || image || document;
 
-    const etags = [];
+    const etags: string[] = [];
     if (isVideo) {
-      // Only the Videos API uses multipart chunked uploads. Each 2MB part is
-      // PUT separately and the returned etags are passed to finalizeUpload.
-      for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
+      // Validate the entire plan before uploading any part. LinkedIn supplies
+      // an inclusive byte range and a separate URL for each part.
+      const parts = planLinkedinVideoUpload(uploadInstructions, picture.length);
+      for (const { uploadUrl: partUrl, firstByte, lastByte } of parts) {
         const upload = await this.fetch(
-          sendUrlRequest,
+          partUrl,
           {
             method: 'PUT',
             headers: {
@@ -347,14 +349,18 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/octet-stream',
             },
-            body: picture.slice(i, i + 1024 * 1024 * 2),
+            body: picture.subarray(firstByte, lastByte + 1),
           },
           'linkedin',
           0,
           true
         );
 
-        etags.push(upload.headers.get('etag'));
+        const etag = upload.headers.get('etag');
+        if (!etag?.trim()) {
+          throw new Error('LinkedIn video upload part returned no ETag');
+        }
+        etags.push(etag);
       }
     } else {
       // Images and documents (PDF carousels) use a single-shot upload URL and
@@ -387,7 +393,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           body: JSON.stringify({
             finalizeUploadRequest: {
               video,
-              uploadToken: '',
+              uploadToken: uploadToken ?? '',
               uploadedPartIds: etags,
             },
           }),
