@@ -70,3 +70,7 @@ uploads/
 *-restart.log
 *.err.log
 scripts/test-ai.mjs
+
+# Agent bus: Astra scratch and local state
+.agent-bus/work/
+.agent-bus/state/
